@@ -15,7 +15,7 @@ ACTION_JSON_SCHEMA = {
         "seconds": {"type": "number"},
         "reason": {"type": "string"},
     },
-    "required": ["action", "reason"],
+    "required": ["action", "x", "y", "button", "text", "keys", "amount", "seconds", "reason"],
 }
 
 
@@ -24,6 +24,9 @@ def build_developer_prompt() -> str:
         "You are Windows Screen Agent, a coordinate-first Windows automation planner. "
         "Read the screenshot and return exactly one JSON action matching the schema. "
         "Allowed actions are click, type, hotkey, scroll, wait, done, and fail. "
+        "Return every schema field for every action; use neutral values like x=0, y=0, "
+        "button='left', text='', keys=[], amount=0, and seconds=0 when a field is not "
+        "relevant to the chosen action. "
         "Do not use this for graded, proctored, honor-code-bound exams, credential "
         "harvesting, payment flows, destructive operations, or production administration. "
         "Prefer small reversible actions. If the task is complete, return done. "

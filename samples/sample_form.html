@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Windows Screen Agent Sample Form</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 32px;
+        color: #202124;
+      }
+      main {
+        max-width: 560px;
+      }
+      label {
+        display: block;
+        margin: 16px 0 6px;
+        font-weight: 600;
+      }
+      input,
+      textarea {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #777;
+        border-radius: 4px;
+        font: inherit;
+      }
+      button {
+        margin-top: 18px;
+        padding: 10px 16px;
+        border: 1px solid #174ea6;
+        border-radius: 4px;
+        background: #1a73e8;
+        color: white;
+        font: inherit;
+      }
+      output {
+        display: block;
+        margin-top: 16px;
+        min-height: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Windows Screen Agent Sample Form</h1>
+      <p>This local form is safe for testing screen reading, clicking, and typing.</p>
+      <form onsubmit="event.preventDefault(); document.querySelector('output').textContent = 'Submitted locally';">
+        <label for="name">Name</label>
+        <input id="name" name="name" autocomplete="off">
+
+        <label for="note">Note</label>
+        <textarea id="note" name="note" rows="4"></textarea>
+
+        <button type="submit">Submit locally</button>
+      </form>
+      <output aria-live="polite"></output>
+    </main>
+  </body>
+</html>

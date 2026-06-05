@@ -25,3 +25,7 @@ def test_prompt_mentions_allowed_actions_and_schema():
     assert "Do not use this for graded" in prompt
     assert ACTION_JSON_SCHEMA["type"] == "object"
     assert "action" in ACTION_JSON_SCHEMA["required"]
+
+
+def test_structured_output_schema_requires_every_property():
+    assert set(ACTION_JSON_SCHEMA["required"]) == set(ACTION_JSON_SCHEMA["properties"])
