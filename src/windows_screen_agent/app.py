@@ -67,3 +67,7 @@ def main(argv: list[str] | None = None) -> int:
     result = runner.run()
     print(f"{result.reason} after {result.steps} steps")
     return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
