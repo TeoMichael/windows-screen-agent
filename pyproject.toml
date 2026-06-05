@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "windows-screen-agent"
+version = "0.1.0"
+description = "Windows screen automation assistant using the OpenAI API"
+requires-python = ">=3.11"
+dependencies = [
+  "openai>=2.0.0",
+  "pyautogui>=0.9.54",
+  "pillow>=10.0.0",
+  "pynput>=1.7.7",
+  "pystray>=0.19.5"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "ruff>=0.8.0"
+]
+
+[project.scripts]
+windows-screen-agent = "windows_screen_agent.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
