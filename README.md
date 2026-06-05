@@ -27,6 +27,10 @@ windows-screen-agent status
 windows-screen-agent stop
 ```
 
+## Tray And Hotkey
+
+The planned tray wrapper exposes Run, Stop, and Quit actions. The default global hotkey is `Ctrl+Alt+Shift+S`. Keep this conservative default so it does not collide with common typing or browser shortcuts.
+
 ## Configuration
 
 - `OPENAI_API_KEY`: required for live API calls.
