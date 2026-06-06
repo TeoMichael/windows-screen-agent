@@ -61,6 +61,23 @@ def _build_codex_prompt(screen: ScreenSnapshot, note: str, history: list[dict]) 
     )
 
 
+def _hidden_subprocess_kwargs() -> dict[str, Any]:
+    kwargs: dict[str, Any] = {}
+    creation_no_window = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    if creation_no_window:
+        kwargs["creationflags"] = creation_no_window
+
+    startupinfo_type = getattr(subprocess, "STARTUPINFO", None)
+    startf_use_show_window = getattr(subprocess, "STARTF_USESHOWWINDOW", 0)
+    sw_hide = getattr(subprocess, "SW_HIDE", 0)
+    if startupinfo_type is not None and startf_use_show_window:
+        startupinfo = startupinfo_type()
+        startupinfo.dwFlags |= startf_use_show_window
+        startupinfo.wShowWindow = sw_hide
+        kwargs["startupinfo"] = startupinfo
+    return kwargs
+
+
 class CodexPlanner:
     def __init__(self, config: Config, command_runner: Any = subprocess.run):
         self.config = config
@@ -103,6 +120,7 @@ class CodexPlanner:
             text=True,
             timeout=max(30, int(self.config.max_runtime_seconds)),
             check=False,
+            **_hidden_subprocess_kwargs(),
         )
         if result.returncode != 0:
             raise RuntimeError(f"codex exec failed: {result.stderr.strip()}")

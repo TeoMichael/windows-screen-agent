@@ -1,3 +1,5 @@
+import subprocess
+
 from windows_screen_agent.codex_agent import CodexPlanner, extract_json_object
 from windows_screen_agent.config import Config
 from windows_screen_agent.planners import build_planner
@@ -28,8 +30,8 @@ def test_extract_json_object_from_markdown_fenced_output():
 def test_codex_planner_invokes_codex_exec_and_parses_action(tmp_path):
     calls = []
 
-    def fake_runner(argv, *, capture_output, text, timeout, check):
-        calls.append(argv)
+    def fake_runner(argv, **kwargs):
+        calls.append((argv, kwargs))
 
         class Result:
             returncode = 0
@@ -49,11 +51,11 @@ def test_codex_planner_invokes_codex_exec_and_parses_action(tmp_path):
     action = planner.plan(screen=screen, note="fill the form", history=[])
 
     assert action.action == "click"
-    assert calls[0][0:2] == ["codex", "exec"]
-    assert "--image" in calls[0]
-    assert str(screen.path) in calls[0]
-    assert "--output-schema" in calls[0]
-    assert str(screen.path) in calls[0][-1]
+    assert calls[0][0][0:2] == ["codex", "exec"]
+    assert "--image" in calls[0][0]
+    assert str(screen.path) in calls[0][0]
+    assert "--output-schema" in calls[0][0]
+    assert str(screen.path) in calls[0][0][-1]
 
 
 def test_codex_planner_passes_profile_model(tmp_path):
@@ -67,8 +69,8 @@ def test_codex_planner_passes_profile_model(tmp_path):
         }
     )
 
-    def fake_runner(argv, *, capture_output, text, timeout, check):
-        calls.append(argv)
+    def fake_runner(argv, **kwargs):
+        calls.append((argv, kwargs))
 
         class Result:
             returncode = 0
@@ -87,8 +89,34 @@ def test_codex_planner_passes_profile_model(tmp_path):
 
     planner.plan(screen=screen, note="quiz", history=[], profile="fast")
 
-    assert "--model" in calls[0]
-    assert calls[0][calls[0].index("--model") + 1] == "codex-fast"
+    assert "--model" in calls[0][0]
+    assert calls[0][0][calls[0][0].index("--model") + 1] == "codex-fast"
+
+
+def test_codex_planner_hides_codex_console_window(tmp_path):
+    calls = []
+
+    def fake_runner(argv, **kwargs):
+        calls.append((argv, kwargs))
+
+        class Result:
+            returncode = 0
+            stdout = '{"action":"done","x":0,"y":0,"button":"left","text":"","keys":[],"amount":0,"seconds":0,"reason":"ok"}'
+            stderr = ""
+
+        return Result()
+
+    planner = CodexPlanner(config=_config(tmp_path), command_runner=fake_runner)
+    screen = ScreenSnapshot(
+        path=tmp_path / "screen.png",
+        width=100,
+        height=80,
+        data_url="data:image/png;base64,abc",
+    )
+
+    planner.plan(screen=screen, note="quiz", history=[], profile="fast")
+
+    assert calls[0][1]["creationflags"] & subprocess.CREATE_NO_WINDOW
 
 
 def test_planner_factory_selects_codex_by_default(tmp_path):
