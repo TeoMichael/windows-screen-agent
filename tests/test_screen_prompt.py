@@ -23,6 +23,9 @@ def test_prompt_mentions_allowed_actions_and_schema():
 
     assert "coordinate-first" in prompt
     assert "Do not use this for graded" in prompt
+    assert "already answered" in prompt
+    assert "scroll down" in prompt
+    assert "blank" in prompt
     assert ACTION_JSON_SCHEMA["type"] == "object"
     assert "action" in ACTION_JSON_SCHEMA["required"]
 
