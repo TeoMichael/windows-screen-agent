@@ -43,13 +43,19 @@ Use only local or sandbox pages while testing.
 
 ## 4. Try tray hotkeys
 
-Start the tray process:
+Start the tray process in the background:
 
 ```powershell
-windows-screen-agent tray
+windows-screen-agent start-tray
 ```
 
 Then focus the sample form window and use:
 
 - `Ctrl+Alt+Enter` to start a background run.
 - `Ctrl+Alt+Backspace` to stop it.
+
+Install auto-start after login:
+
+```powershell
+windows-screen-agent install-autostart
+```

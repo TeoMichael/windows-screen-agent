@@ -69,4 +69,33 @@ def test_executor_expands_tiny_scroll_steps():
 
     ActionExecutor(backend=backend).execute(Action(action="scroll", amount=-5))
 
-    assert calls == [("scroll", -15)]
+    assert calls == [("hotkey", ("pagedown",))]
+
+
+def test_executor_repeats_page_down_for_larger_scroll():
+    calls = []
+    backend = type(
+        "Backend",
+        (),
+        {
+            "click": lambda self, x, y, button: calls.append(("click", x, y, button)),
+            "write": lambda self, text, interval: calls.append(("write", text, interval)),
+            "scroll": lambda self, amount: calls.append(("scroll", amount)),
+            "hotkey": lambda self, *keys: calls.append(("hotkey", keys)),
+        },
+    )()
+
+    ActionExecutor(backend=backend).execute(Action(action="scroll", amount=-30))
+
+    assert calls == [("hotkey", ("pagedown",)), ("hotkey", ("pagedown",))]
+
+
+def test_repeated_scroll_actions_are_amplified():
+    from windows_screen_agent.actions import amplify_repeated_scroll
+
+    action = amplify_repeated_scroll(
+        Action(action="scroll", amount=-5),
+        history=[{"action": "scroll", "amount": -15}],
+    )
+
+    assert action.amount == -30

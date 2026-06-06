@@ -2,7 +2,7 @@ from dataclasses import asdict, dataclass
 import time
 from typing import Any
 
-from windows_screen_agent.actions import ActionValidationError, validate_action
+from windows_screen_agent.actions import ActionValidationError, amplify_repeated_scroll, validate_action
 from windows_screen_agent.config import Config
 from windows_screen_agent.logs import append_jsonl, runtime_paths, write_status
 from windows_screen_agent.routing import choose_planning_profile
@@ -48,6 +48,7 @@ class Runner:
                 history=history,
                 profile=profile,
             )
+            action = amplify_repeated_scroll(action, history)
 
             try:
                 validate_action(

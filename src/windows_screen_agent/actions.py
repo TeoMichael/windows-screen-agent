@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+from dataclasses import replace
 import json
+import math
 from typing import Any
 
 
@@ -15,6 +17,8 @@ SUPPORTED_HOTKEYS = {
     "shift",
     "alt",
     "win",
+    "pagedown",
+    "pageup",
     "a",
     "c",
     "v",
@@ -104,7 +108,7 @@ class ActionExecutor:
         elif action.action == "type":
             self.backend.write(action.text, interval=0.01)
         elif action.action == "scroll":
-            self.backend.scroll(_normalize_scroll_amount(action.amount))
+            _execute_page_scroll(self.backend, action.amount)
         elif action.action == "hotkey":
             self.backend.hotkey(*action.keys)
         elif action.action in {"wait", "done", "fail"}:
@@ -116,3 +120,35 @@ def _normalize_scroll_amount(amount: int) -> int:
         return 0
     direction = 1 if amount > 0 else -1
     return direction * max(abs(amount), MIN_SCROLL_UNITS)
+
+
+def _execute_page_scroll(backend: Any, amount: int) -> None:
+    if amount == 0:
+        return
+    key = "pagedown" if amount < 0 else "pageup"
+    repeats = max(1, min(3, math.ceil(abs(_normalize_scroll_amount(amount)) / MIN_SCROLL_UNITS)))
+    for _ in range(repeats):
+        if hasattr(backend, "press"):
+            backend.press(key)
+        elif hasattr(backend, "hotkey"):
+            backend.hotkey(key)
+        else:
+            backend.scroll(_normalize_scroll_amount(amount))
+
+
+def amplify_repeated_scroll(action: Action, history: list[dict]) -> Action:
+    if action.action != "scroll" or action.amount == 0:
+        return action
+    direction = 1 if action.amount > 0 else -1
+    trailing_same_direction = 0
+    for previous in reversed(history):
+        if previous.get("action") != "scroll":
+            break
+        previous_amount = int(previous.get("amount", 0) or 0)
+        if previous_amount == 0 or (1 if previous_amount > 0 else -1) != direction:
+            break
+        trailing_same_direction += 1
+    if trailing_same_direction == 0:
+        return action
+    units = min(3, trailing_same_direction + 1) * MIN_SCROLL_UNITS
+    return replace(action, amount=direction * max(abs(action.amount), units))

@@ -13,6 +13,7 @@ This repository is runnable as a developer preview:
 - `python -m pytest -q` runs the sample test suite.
 - `windows-screen-agent run` and `run-once` can move/click/type on the active Windows desktop.
 - `windows-screen-agent tray` runs in the background and exposes global start/stop hotkeys.
+- `windows-screen-agent install-autostart` installs a per-user Windows Startup shortcut so the tray listener starts after login.
 
 ## Requirements
 
@@ -53,6 +54,9 @@ windows-screen-agent status
 windows-screen-agent stop
 windows-screen-agent doctor
 windows-screen-agent tray
+windows-screen-agent start-tray
+windows-screen-agent install-autostart
+windows-screen-agent uninstall-autostart
 python -m pytest -q
 ```
 
@@ -73,9 +77,27 @@ For a visible local sample, open `samples/sample_form.html`, select a backend, f
 windows-screen-agent run-once --note "This is the local sample form. Fill the name field with Sample User."
 ```
 
-## Tray And Hotkeys
+## Tray, Background Mode, And Hotkeys
 
-The tray wrapper exposes Run, Stop, and Quit actions. Start it before using global hotkeys:
+The tray wrapper exposes Run, Stop, and Quit actions. For the current session, start it hidden in the background:
+
+```powershell
+windows-screen-agent start-tray
+```
+
+To start the tray automatically after Windows login, install the per-user Startup shortcut:
+
+```powershell
+windows-screen-agent install-autostart
+```
+
+Remove it with:
+
+```powershell
+windows-screen-agent uninstall-autostart
+```
+
+For debugging, you can still run the tray in the foreground:
 
 ```powershell
 windows-screen-agent tray
@@ -86,7 +108,7 @@ Default global hotkeys:
 - `Ctrl+Alt+Enter`: start a background `run`.
 - `Ctrl+Alt+Backspace`: request an emergency stop.
 
-Keep the tray process open while using hotkeys. The hotkeys use the selected planner backend, so `WSA_PLANNER=codex` uses local Codex and `WSA_PLANNER=openai` uses the OpenAI API.
+Keep the tray process running while using hotkeys. The hotkeys use the selected planner backend, so `WSA_PLANNER=codex` uses local Codex and `WSA_PLANNER=openai` uses the OpenAI API.
 
 ## Configuration
 
@@ -112,6 +134,8 @@ $env:WSA_MAX_STEPS = "80"
 $env:WSA_MAX_RUNTIME_SECONDS = "900"
 windows-screen-agent tray
 ```
+
+Scroll actions use full-page `PageDown`/`PageUp` movement instead of tiny mouse-wheel steps. Repeated scroll actions are amplified to move farther before the next screenshot.
 
 ## Safety Controls
 

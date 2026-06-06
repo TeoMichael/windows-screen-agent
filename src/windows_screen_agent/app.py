@@ -5,6 +5,7 @@ from pathlib import Path
 import threading
 
 from windows_screen_agent.actions import ActionExecutor
+from windows_screen_agent.autostart import install_autostart, start_tray_background, uninstall_autostart
 from windows_screen_agent.config import Config, load_config
 from windows_screen_agent.doctor import collect_diagnostics, format_diagnostics
 from windows_screen_agent.logs import runtime_paths
@@ -33,6 +34,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("stop")
     sub.add_parser("doctor")
     sub.add_parser("tray")
+    sub.add_parser("start-tray")
+    install = sub.add_parser("install-autostart")
+    install.add_argument("--no-start", action="store_true")
+    sub.add_parser("uninstall-autostart")
     return parser
 
 
@@ -137,7 +142,15 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     runtime_dir = _runtime_dir_without_api_key()
 
-    if args.command in {"stop", "status", "doctor", "tray"}:
+    if args.command in {
+        "stop",
+        "status",
+        "doctor",
+        "tray",
+        "start-tray",
+        "install-autostart",
+        "uninstall-autostart",
+    }:
         paths = runtime_paths(runtime_dir)
         if args.command == "stop":
             _request_stop(runtime_dir)
@@ -155,6 +168,21 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == "tray":
             return _run_tray(runtime_dir)
+        if args.command == "start-tray":
+            pid = start_tray_background(runtime_dir=runtime_dir)
+            print(f"tray started pid {pid}")
+            return 0
+        if args.command == "install-autostart":
+            link_path = install_autostart(working_dir=Path.cwd())
+            print(f"autostart installed: {link_path}")
+            if not args.no_start:
+                pid = start_tray_background(runtime_dir=runtime_dir)
+                print(f"tray started pid {pid}")
+            return 0
+        if args.command == "uninstall-autostart":
+            link_path = uninstall_autostart()
+            print(f"autostart removed: {link_path}")
+            return 0
         if paths.status_file.exists():
             print(paths.status_file.read_text(encoding="utf-8"))
         else:

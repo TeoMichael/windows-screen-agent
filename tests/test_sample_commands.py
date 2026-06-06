@@ -51,3 +51,28 @@ def test_demo_command_is_removed(tmp_path):
     )
 
     assert result.returncode == 2
+
+
+def test_autostart_commands_are_dispatchable(monkeypatch, tmp_path, capsys):
+    from windows_screen_agent import app
+
+    monkeypatch.setenv("WSA_RUNTIME_DIR", str(tmp_path))
+    monkeypatch.setattr(app, "install_autostart", lambda **kwargs: tmp_path / "agent.lnk")
+    monkeypatch.setattr(app, "uninstall_autostart", lambda: tmp_path / "agent.lnk")
+
+    assert app.main(["install-autostart", "--no-start"]) == 0
+    assert "autostart installed" in capsys.readouterr().out
+
+    assert app.main(["uninstall-autostart"]) == 0
+    assert "autostart removed" in capsys.readouterr().out
+
+
+def test_start_tray_command_dispatches_background_launcher(monkeypatch, tmp_path, capsys):
+    from windows_screen_agent import app
+
+    monkeypatch.setenv("WSA_RUNTIME_DIR", str(tmp_path))
+    monkeypatch.setattr(app, "start_tray_background", lambda **kwargs: 4321)
+
+    assert app.main(["start-tray"]) == 0
+
+    assert "tray started pid 4321" in capsys.readouterr().out

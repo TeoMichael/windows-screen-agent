@@ -15,7 +15,17 @@ def test_parser_has_core_commands():
     parser = build_parser()
     commands = parser._subparsers._group_actions[0].choices
 
-    assert {"run", "run-once", "status", "stop", "doctor", "tray"} <= set(commands)
+    assert {
+        "run",
+        "run-once",
+        "status",
+        "stop",
+        "doctor",
+        "tray",
+        "start-tray",
+        "install-autostart",
+        "uninstall-autostart",
+    } <= set(commands)
     assert "demo" not in commands
 
 
