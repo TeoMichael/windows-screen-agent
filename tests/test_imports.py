@@ -15,7 +15,8 @@ def test_parser_has_core_commands():
     parser = build_parser()
     commands = parser._subparsers._group_actions[0].choices
 
-    assert {"run", "run-once", "status", "stop", "demo", "doctor", "tray"} <= set(commands)
+    assert {"run", "run-once", "status", "stop", "doctor", "tray"} <= set(commands)
+    assert "demo" not in commands
 
 
 def test_default_hotkey_is_conservative():
@@ -39,5 +40,5 @@ def test_module_help_lists_core_commands():
     assert result.returncode == 0
     assert "run-once" in result.stdout
     assert "status" in result.stdout
-    assert "demo" in result.stdout
     assert "doctor" in result.stdout
+    assert "demo" not in result.stdout

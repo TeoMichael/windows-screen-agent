@@ -5,11 +5,10 @@ from pathlib import Path
 import threading
 
 from windows_screen_agent.actions import ActionExecutor
-from windows_screen_agent.config import load_config
-from windows_screen_agent.demo import run_demo
+from windows_screen_agent.config import Config, load_config
 from windows_screen_agent.doctor import collect_diagnostics, format_diagnostics
 from windows_screen_agent.logs import runtime_paths
-from windows_screen_agent.openai_agent import OpenAIPlanner
+from windows_screen_agent.planners import build_planner
 from windows_screen_agent.runner import Runner
 from windows_screen_agent.screen import capture_screen
 
@@ -32,7 +31,6 @@ def build_parser() -> argparse.ArgumentParser:
     run_once.add_argument("--note", default="")
     sub.add_parser("status")
     sub.add_parser("stop")
-    sub.add_parser("demo")
     sub.add_parser("doctor")
     sub.add_parser("tray")
     return parser
@@ -45,6 +43,25 @@ def _runtime_dir_without_api_key() -> Path:
 def _request_stop(runtime_dir: Path) -> None:
     paths = runtime_paths(runtime_dir)
     paths.stop_file.write_text("stop", encoding="utf-8")
+
+
+def _diagnostic_config() -> Config:
+    try:
+        return load_config()
+    except ValueError:
+        runtime_dir = _runtime_dir_without_api_key()
+        return Config(
+            openai_api_key=os.environ.get("OPENAI_API_KEY", ""),
+            model=os.environ.get("OPENAI_MODEL", "gpt-5.2"),
+            runtime_dir=runtime_dir,
+            max_steps=20,
+            max_runtime_seconds=180.0,
+            action_delay_seconds=0.5,
+            max_type_chars=1000,
+            confirm_before_submit=False,
+            planner_backend=os.environ.get("WSA_PLANNER", "codex").strip().lower(),
+            codex_bin=os.environ.get("CODEX_BIN", "codex"),
+        )
 
 
 def _run_tray(runtime_dir: Path) -> int:
@@ -74,20 +91,18 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     runtime_dir = _runtime_dir_without_api_key()
 
-    if args.command in {"stop", "status", "demo", "doctor", "tray"}:
+    if args.command in {"stop", "status", "doctor", "tray"}:
         paths = runtime_paths(runtime_dir)
         if args.command == "stop":
             _request_stop(runtime_dir)
             print("stop requested")
             return 0
-        if args.command == "demo":
-            result = run_demo(runtime_dir)
-            calls = ", ".join(call[0] for call in result.calls)
-            print(f"demo completed after {result.steps} steps: {calls}")
-            return 0
         if args.command == "doctor":
+            cfg = _diagnostic_config()
             diagnostics = collect_diagnostics(
-                runtime_dir=runtime_dir,
+                runtime_dir=cfg.runtime_dir,
+                planner_backend=cfg.planner_backend,
+                codex_bin=cfg.codex_bin,
                 openai_api_key=os.environ.get("OPENAI_API_KEY"),
             )
             print(format_diagnostics(diagnostics))
@@ -108,7 +123,7 @@ def main(argv: list[str] | None = None) -> int:
         paths.stop_file.unlink()
 
     screen = PyAutoGuiScreen(paths.screens_dir, backend=pyautogui)
-    planner = OpenAIPlanner(config=cfg)
+    planner = build_planner(cfg)
     executor = ActionExecutor(backend=pyautogui)
 
     if args.command == "run-once":

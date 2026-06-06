@@ -8,17 +8,24 @@ These samples are safe local checks for a fresh clone.
 python -m pytest -q
 ```
 
-## 2. Run the built-in demo without an API key
+## 2. Select a planner backend
 
 ```powershell
-windows-screen-agent demo
+$env:WSA_PLANNER = "codex"
+windows-screen-agent doctor
 ```
 
-The demo uses an in-memory sample screen, a deterministic demo planner, and a recording backend. It does not call OpenAI and does not move the mouse.
+The default `codex` backend uses your local Codex CLI. To use OpenAI instead:
+
+```powershell
+$env:WSA_PLANNER = "openai"
+$env:OPENAI_API_KEY = "your-api-key"
+windows-screen-agent doctor
+```
 
 ## 3. Try a visible sample form
 
-Open `sample_form.html` in a browser or Notepad. For live automation, set `OPENAI_API_KEY`, focus the sample form window, and run:
+Open `sample_form.html` in a browser or Notepad. Focus the sample form window, then run:
 
 ```powershell
 windows-screen-agent run-once --note "This is the local sample form. Fill the name field with Sample User."

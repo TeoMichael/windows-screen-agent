@@ -1,6 +1,6 @@
 # Windows Screen Agent
 
-Windows Screen Agent is a Windows-first screen automation assistant. It captures the current screen, sends the screenshot to the OpenAI Responses API, receives one structured action, validates that action, executes it locally, and repeats until the task is complete or the user stops it.
+Windows Screen Agent is a Windows-first screen automation assistant. It captures the current screen, asks a planner backend for one structured action, validates that action, executes it locally, and repeats until the task is complete or the user stops it.
 
 This project is for personal practice, sandbox labs, forms, and repetitive local tasks. Do not use it for graded, proctored, honor-code-bound exams, credential harvesting, payment flows, production administration, or automation that violates a site's terms.
 
@@ -8,15 +8,16 @@ This project is for personal practice, sandbox labs, forms, and repetitive local
 
 This repository is runnable as a developer preview:
 
-- `windows-screen-agent demo` runs without an API key and does not move the mouse.
+- `WSA_PLANNER=codex` is the default and uses your local Codex CLI as the planner backend.
+- `WSA_PLANNER=openai` uses the OpenAI Responses API instead.
 - `python -m pytest -q` runs the sample test suite.
-- `windows-screen-agent run` and `run-once` call the OpenAI API and can move/click/type on the active Windows desktop.
+- `windows-screen-agent run` and `run-once` can move/click/type on the active Windows desktop.
 
 ## Requirements
 
 - Windows 10 or 11
 - Python 3.11+
-- An OpenAI API key in `OPENAI_API_KEY`
+- Codex CLI installed and logged in for the default `codex` backend, or an OpenAI API key in `OPENAI_API_KEY` for the `openai` backend
 
 Use a normal Windows Python installation from python.org or the Microsoft Store. Avoid MSYS/Cygwin Python for this project because some Windows wheels may not install cleanly there.
 
@@ -27,9 +28,17 @@ python -m venv .venv
 .venv\Scripts\python -m pip install -e ".[dev]"
 ```
 
-Set an API key only for live OpenAI runs:
+The default backend is Codex:
 
 ```powershell
+$env:WSA_PLANNER = "codex"
+$env:CODEX_BIN = "codex"
+```
+
+Use OpenAI API instead:
+
+```powershell
+$env:WSA_PLANNER = "openai"
 $env:OPENAI_API_KEY = "your-api-key"
 ```
 
@@ -41,7 +50,6 @@ windows-screen-agent run
 windows-screen-agent status
 windows-screen-agent stop
 windows-screen-agent doctor
-windows-screen-agent demo
 windows-screen-agent tray
 python -m pytest -q
 ```
@@ -52,13 +60,12 @@ Run these commands after installing:
 
 ```powershell
 windows-screen-agent doctor
-windows-screen-agent demo
 python -m pytest -q
 ```
 
-`demo` is deterministic and offline. It creates a fake screenshot, runs a sample click/type/done sequence, and records the actions without controlling your desktop.
+`doctor` checks whether your selected planner backend is ready. Tests validate the parser, runner, config, sample form, and planner wrappers without moving the mouse.
 
-For a visible local sample, open `samples/sample_form.html`, set `OPENAI_API_KEY`, focus the browser window, and run:
+For a visible local sample, open `samples/sample_form.html`, select a backend, focus the browser window, and run:
 
 ```powershell
 windows-screen-agent run-once --note "This is the local sample form. Fill the name field with Sample User."
@@ -70,7 +77,9 @@ The planned tray wrapper exposes Run, Stop, and Quit actions. The default global
 
 ## Configuration
 
-- `OPENAI_API_KEY`: required for live API calls.
+- `WSA_PLANNER`: `codex` or `openai`. Defaults to `codex`.
+- `CODEX_BIN`: Codex executable used when `WSA_PLANNER=codex`. Defaults to `codex`.
+- `OPENAI_API_KEY`: required only when `WSA_PLANNER=openai`.
 - `OPENAI_MODEL`: model used for planning actions. Defaults to `gpt-5.2`.
 - `WSA_MAX_STEPS`: maximum actions per run. Defaults to `20`.
 - `WSA_MAX_RUNTIME_SECONDS`: maximum runtime per run. Defaults to `180`.
