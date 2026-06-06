@@ -15,6 +15,11 @@ class Config:
     confirm_before_submit: bool
     planner_backend: str = "codex"
     codex_bin: str = "codex"
+    planner_mode: str = "auto"
+    codex_model_fast: str = ""
+    codex_model_careful: str = ""
+    openai_model_fast: str = "gpt-5.2"
+    openai_model_careful: str = "gpt-5.2"
 
 
 def _int_env(name: str, default: int) -> int:
@@ -52,6 +57,10 @@ def load_config() -> Config:
     if planner_backend not in {"codex", "openai"}:
         raise ValueError("WSA_PLANNER must be either 'codex' or 'openai'")
 
+    planner_mode = os.environ.get("WSA_MODE", "auto").strip().lower()
+    if planner_mode not in {"auto", "fast", "careful"}:
+        raise ValueError("WSA_MODE must be one of 'auto', 'fast', or 'careful'")
+
     api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if planner_backend == "openai" and not api_key:
         raise ValueError("OPENAI_API_KEY is required when WSA_PLANNER=openai")
@@ -59,10 +68,12 @@ def load_config() -> Config:
     runtime_dir = Path(
         os.environ.get("WSA_RUNTIME_DIR", str(Path.home() / ".windows-screen-agent"))
     ).expanduser()
+    openai_model = os.environ.get("OPENAI_MODEL", "gpt-5.2")
+    codex_model = os.environ.get("CODEX_MODEL", "").strip()
 
     return Config(
         openai_api_key=api_key,
-        model=os.environ.get("OPENAI_MODEL", "gpt-5.2"),
+        model=openai_model,
         runtime_dir=runtime_dir,
         max_steps=_int_env("WSA_MAX_STEPS", 20),
         max_runtime_seconds=_float_env("WSA_MAX_RUNTIME_SECONDS", 180.0),
@@ -71,4 +82,9 @@ def load_config() -> Config:
         confirm_before_submit=_bool_env("WSA_CONFIRM_BEFORE_SUBMIT", False),
         planner_backend=planner_backend,
         codex_bin=_default_codex_bin(),
+        planner_mode=planner_mode,
+        codex_model_fast=os.environ.get("CODEX_MODEL_FAST", codex_model).strip(),
+        codex_model_careful=os.environ.get("CODEX_MODEL_CAREFUL", codex_model).strip(),
+        openai_model_fast=os.environ.get("OPENAI_MODEL_FAST", openai_model),
+        openai_model_careful=os.environ.get("OPENAI_MODEL_CAREFUL", openai_model),
     )

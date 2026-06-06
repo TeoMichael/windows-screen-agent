@@ -5,6 +5,7 @@ from typing import Any
 from windows_screen_agent.actions import ActionValidationError, validate_action
 from windows_screen_agent.config import Config
 from windows_screen_agent.logs import append_jsonl, runtime_paths, write_status
+from windows_screen_agent.routing import choose_planning_profile
 
 
 @dataclass(frozen=True)
@@ -39,7 +40,14 @@ class Runner:
 
             write_status(self.paths, f"step {step}: capture")
             snapshot = self.screen.capture()
-            action = self.planner.plan(screen=snapshot, note=note, history=history)
+            profile = choose_planning_profile(self.config, note=note, history=history)
+            write_status(self.paths, f"step {step}: plan ({profile})")
+            action = self.planner.plan(
+                screen=snapshot,
+                note=note,
+                history=history,
+                profile=profile,
+            )
 
             try:
                 validate_action(
@@ -53,7 +61,10 @@ class Runner:
                 write_status(self.paths, "validation failed")
                 return RunResult(reason="validation failed", steps=step - 1)
 
-            append_jsonl(self.paths.actions_log, {"step": step, "action": asdict(action)})
+            append_jsonl(
+                self.paths.actions_log,
+                {"step": step, "profile": profile, "action": asdict(action)},
+            )
             history.append(asdict(action))
 
             if action.action == "done":

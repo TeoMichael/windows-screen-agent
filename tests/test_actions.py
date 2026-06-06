@@ -52,3 +52,21 @@ def test_executor_dispatches_click_to_backend():
     ActionExecutor(backend=backend).execute(Action(action="click", x=5, y=6, button="left"))
 
     assert calls == [("click", 5, 6, "left")]
+
+
+def test_executor_expands_tiny_scroll_steps():
+    calls = []
+    backend = type(
+        "Backend",
+        (),
+        {
+            "click": lambda self, x, y, button: calls.append(("click", x, y, button)),
+            "write": lambda self, text, interval: calls.append(("write", text, interval)),
+            "scroll": lambda self, amount: calls.append(("scroll", amount)),
+            "hotkey": lambda self, *keys: calls.append(("hotkey", keys)),
+        },
+    )()
+
+    ActionExecutor(backend=backend).execute(Action(action="scroll", amount=-5))
+
+    assert calls == [("scroll", -15)]

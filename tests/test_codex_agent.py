@@ -56,6 +56,41 @@ def test_codex_planner_invokes_codex_exec_and_parses_action(tmp_path):
     assert str(screen.path) in calls[0][-1]
 
 
+def test_codex_planner_passes_profile_model(tmp_path):
+    calls = []
+    cfg = _config(tmp_path)
+    cfg = Config(
+        **{
+            **cfg.__dict__,
+            "codex_model_fast": "codex-fast",
+            "codex_model_careful": "codex-careful",
+        }
+    )
+
+    def fake_runner(argv, *, capture_output, text, timeout, check):
+        calls.append(argv)
+
+        class Result:
+            returncode = 0
+            stdout = '{"action":"done","x":0,"y":0,"button":"left","text":"","keys":[],"amount":0,"seconds":0,"reason":"ok"}'
+            stderr = ""
+
+        return Result()
+
+    planner = CodexPlanner(config=cfg, command_runner=fake_runner)
+    screen = ScreenSnapshot(
+        path=tmp_path / "screen.png",
+        width=100,
+        height=80,
+        data_url="data:image/png;base64,abc",
+    )
+
+    planner.plan(screen=screen, note="quiz", history=[], profile="fast")
+
+    assert "--model" in calls[0]
+    assert calls[0][calls[0].index("--model") + 1] == "codex-fast"
+
+
 def test_planner_factory_selects_codex_by_default(tmp_path):
     planner = build_planner(_config(tmp_path, backend="codex"))
 

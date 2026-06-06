@@ -51,3 +51,30 @@ def test_planner_calls_responses_api_and_parses_action(tmp_path):
     assert action.action == "click"
     assert client.responses.calls[0]["model"] == "gpt-5.2"
     assert client.responses.calls[0]["input"][1]["content"][1]["type"] == "input_image"
+
+
+def test_openai_planner_uses_profile_model(tmp_path):
+    cfg = Config(
+        openai_api_key="sk-test",
+        model="gpt-5.2",
+        openai_model_fast="gpt-fast",
+        openai_model_careful="gpt-careful",
+        runtime_dir=tmp_path,
+        max_steps=3,
+        max_runtime_seconds=10,
+        action_delay_seconds=0.1,
+        max_type_chars=100,
+        confirm_before_submit=False,
+    )
+    client = FakeClient()
+    planner = OpenAIPlanner(config=cfg, client=client)
+    screen = ScreenSnapshot(
+        path=tmp_path / "screen.png",
+        width=100,
+        height=80,
+        data_url="data:image/png;base64,abc",
+    )
+
+    planner.plan(screen=screen, note="quiz", history=[], profile="fast")
+
+    assert client.responses.calls[0]["model"] == "gpt-fast"

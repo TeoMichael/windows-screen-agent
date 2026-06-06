@@ -5,6 +5,7 @@ from typing import Any
 from windows_screen_agent.actions import Action, parse_action
 from windows_screen_agent.config import Config
 from windows_screen_agent.prompt import ACTION_JSON_SCHEMA, build_developer_prompt, build_user_text
+from windows_screen_agent.routing import codex_model_for_profile
 from windows_screen_agent.screen import ScreenSnapshot
 
 
@@ -65,24 +66,39 @@ class CodexPlanner:
         self.config = config
         self.command_runner = command_runner
 
-    def plan(self, *, screen: ScreenSnapshot, note: str, history: list[dict]) -> Action:
+    def plan(
+        self,
+        *,
+        screen: ScreenSnapshot,
+        note: str,
+        history: list[dict],
+        profile: str = "careful",
+    ) -> Action:
         prompt = _build_codex_prompt(screen, note, history)
         self.config.runtime_dir.mkdir(parents=True, exist_ok=True)
         schema_path = self.config.runtime_dir / "action-schema.json"
         schema_path.write_text(json.dumps(ACTION_JSON_SCHEMA, ensure_ascii=False), encoding="utf-8")
-        result = self.command_runner(
+        argv = [
+            self.config.codex_bin,
+            "exec",
+            "--skip-git-repo-check",
+            "--sandbox",
+            "read-only",
+        ]
+        model = codex_model_for_profile(self.config, profile)
+        if model:
+            argv.extend(["--model", model])
+        argv.extend(
             [
-                self.config.codex_bin,
-                "exec",
-                "--skip-git-repo-check",
-                "--sandbox",
-                "read-only",
                 "--image",
                 str(screen.path),
                 "--output-schema",
                 str(schema_path),
                 prompt,
-            ],
+            ]
+        )
+        result = self.command_runner(
+            argv,
             capture_output=True,
             text=True,
             timeout=max(30, int(self.config.max_runtime_seconds)),

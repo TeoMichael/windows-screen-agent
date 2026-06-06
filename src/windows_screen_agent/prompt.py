@@ -31,7 +31,7 @@ def build_developer_prompt() -> str:
         "already answered, marked correct, marked wrong, disabled, or showing result "
         "percentages. If all currently visible questions are already answered or the "
         "next unanswered question is partly below the bottom of the screen, scroll down "
-        "with a negative amount such as -5. Use positive scroll amounts only to move "
+        "with a negative amount such as -15. Use positive scroll amounts only to move "
         "back up. For fill-in-the-blank, short-answer, or text field questions, click "
         "the visible blank/input first, then use type with the concise answer when the "
         "field is focused. "

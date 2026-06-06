@@ -23,6 +23,14 @@ $env:OPENAI_API_KEY = "your-api-key"
 windows-screen-agent doctor
 ```
 
+For quiz pages, start with fast mode and a larger step budget:
+
+```powershell
+$env:WSA_MODE = "fast"
+$env:WSA_MAX_STEPS = "80"
+$env:WSA_MAX_RUNTIME_SECONDS = "900"
+```
+
 ## 3. Try a visible sample form
 
 Open `sample_form.html` in a browser or Notepad. Focus the sample form window, then run:

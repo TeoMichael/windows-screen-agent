@@ -5,6 +5,7 @@ from typing import Any
 
 SUPPORTED_ACTIONS = {"click", "type", "hotkey", "scroll", "wait", "done", "fail"}
 SUPPORTED_BUTTONS = {"left", "right", "middle"}
+MIN_SCROLL_UNITS = 15
 SUPPORTED_HOTKEYS = {
     "enter",
     "tab",
@@ -103,8 +104,15 @@ class ActionExecutor:
         elif action.action == "type":
             self.backend.write(action.text, interval=0.01)
         elif action.action == "scroll":
-            self.backend.scroll(action.amount)
+            self.backend.scroll(_normalize_scroll_amount(action.amount))
         elif action.action == "hotkey":
             self.backend.hotkey(*action.keys)
         elif action.action in {"wait", "done", "fail"}:
             return
+
+
+def _normalize_scroll_amount(amount: int) -> int:
+    if amount == 0:
+        return 0
+    direction = 1 if amount > 0 else -1
+    return direction * max(abs(amount), MIN_SCROLL_UNITS)

@@ -28,6 +28,36 @@ def test_load_config_reads_environment(monkeypatch, tmp_path):
     assert cfg.runtime_dir == tmp_path
 
 
+def test_load_config_reads_mode_and_model_profiles(monkeypatch, tmp_path):
+    monkeypatch.setenv("WSA_PLANNER", "codex")
+    monkeypatch.setenv("WSA_MODE", "careful")
+    monkeypatch.setenv("CODEX_MODEL_FAST", "codex-fast")
+    monkeypatch.setenv("CODEX_MODEL_CAREFUL", "codex-careful")
+    monkeypatch.setenv("OPENAI_MODEL_FAST", "openai-fast")
+    monkeypatch.setenv("OPENAI_MODEL_CAREFUL", "openai-careful")
+    monkeypatch.setenv("WSA_RUNTIME_DIR", str(tmp_path))
+
+    cfg = load_config()
+
+    assert cfg.planner_mode == "careful"
+    assert cfg.codex_model_fast == "codex-fast"
+    assert cfg.codex_model_careful == "codex-careful"
+    assert cfg.openai_model_fast == "openai-fast"
+    assert cfg.openai_model_careful == "openai-careful"
+
+
+def test_load_config_rejects_unknown_mode(monkeypatch):
+    monkeypatch.setenv("WSA_PLANNER", "codex")
+    monkeypatch.setenv("WSA_MODE", "slowish")
+
+    try:
+        load_config()
+    except ValueError as exc:
+        assert "WSA_MODE" in str(exc)
+    else:
+        raise AssertionError("unknown WSA_MODE must be rejected")
+
+
 def test_openai_backend_requires_api_key(monkeypatch):
     monkeypatch.setenv("WSA_PLANNER", "openai")
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)

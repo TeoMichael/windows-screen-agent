@@ -5,6 +5,7 @@ from openai import OpenAI
 from windows_screen_agent.actions import Action, parse_action
 from windows_screen_agent.config import Config
 from windows_screen_agent.prompt import ACTION_JSON_SCHEMA, build_developer_prompt, build_user_text
+from windows_screen_agent.routing import openai_model_for_profile
 from windows_screen_agent.screen import ScreenSnapshot
 
 
@@ -13,9 +14,16 @@ class OpenAIPlanner:
         self.config = config
         self.client = client or OpenAI(api_key=config.openai_api_key)
 
-    def plan(self, *, screen: ScreenSnapshot, note: str, history: list[dict]) -> Action:
+    def plan(
+        self,
+        *,
+        screen: ScreenSnapshot,
+        note: str,
+        history: list[dict],
+        profile: str = "careful",
+    ) -> Action:
         response = self.client.responses.create(
-            model=self.config.model,
+            model=openai_model_for_profile(self.config, profile),
             input=[
                 {
                     "role": "developer",

@@ -67,6 +67,20 @@ def _diagnostic_config() -> Config:
             confirm_before_submit=False,
             planner_backend=os.environ.get("WSA_PLANNER", "codex").strip().lower(),
             codex_bin=os.environ.get("CODEX_BIN", "codex"),
+            planner_mode=os.environ.get("WSA_MODE", "auto").strip().lower(),
+            codex_model_fast=os.environ.get("CODEX_MODEL_FAST", os.environ.get("CODEX_MODEL", "")),
+            codex_model_careful=os.environ.get(
+                "CODEX_MODEL_CAREFUL",
+                os.environ.get("CODEX_MODEL", ""),
+            ),
+            openai_model_fast=os.environ.get(
+                "OPENAI_MODEL_FAST",
+                os.environ.get("OPENAI_MODEL", "gpt-5.2"),
+            ),
+            openai_model_careful=os.environ.get(
+                "OPENAI_MODEL_CAREFUL",
+                os.environ.get("OPENAI_MODEL", "gpt-5.2"),
+            ),
         )
 
 

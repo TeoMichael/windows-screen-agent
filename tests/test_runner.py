@@ -23,8 +23,10 @@ class FakeScreen:
 class FakePlanner:
     def __init__(self, actions):
         self.actions = list(actions)
+        self.profiles = []
 
-    def plan(self, *, screen, note, history):
+    def plan(self, *, screen, note, history, profile):
+        self.profiles.append(profile)
         return self.actions.pop(0)
 
 
@@ -51,10 +53,11 @@ def _config(tmp_path):
 
 def test_runner_stops_on_done(tmp_path):
     executor = FakeExecutor()
+    planner = FakePlanner([Action(action="done", reason="finished")])
     runner = Runner(
         config=_config(tmp_path),
         screen=FakeScreen(tmp_path / "screen.png"),
-        planner=FakePlanner([Action(action="done", reason="finished")]),
+        planner=planner,
         executor=executor,
     )
 
@@ -62,6 +65,7 @@ def test_runner_stops_on_done(tmp_path):
 
     assert result.reason == "done"
     assert executor.actions == []
+    assert planner.profiles == ["fast"]
 
 
 def test_runner_executes_action_then_done(tmp_path):

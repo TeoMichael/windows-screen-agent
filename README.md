@@ -34,6 +34,7 @@ The default backend is Codex:
 ```powershell
 $env:WSA_PLANNER = "codex"
 $env:CODEX_BIN = "codex"
+$env:WSA_MODE = "auto"
 ```
 
 Use OpenAI API instead:
@@ -90,12 +91,27 @@ Keep the tray process open while using hotkeys. The hotkeys use the selected pla
 ## Configuration
 
 - `WSA_PLANNER`: `codex` or `openai`. Defaults to `codex`.
+- `WSA_MODE`: `auto`, `fast`, or `careful`. Defaults to `auto`; simple quiz/form runs use `fast`, complex/security/lab notes use `careful`.
 - `CODEX_BIN`: Codex executable used when `WSA_PLANNER=codex`. Defaults to `codex`.
+- `CODEX_MODEL`: optional default Codex model passed to `codex exec --model`.
+- `CODEX_MODEL_FAST`: optional Codex model for `fast` profile.
+- `CODEX_MODEL_CAREFUL`: optional Codex model for `careful` profile.
 - `OPENAI_API_KEY`: required only when `WSA_PLANNER=openai`.
 - `OPENAI_MODEL`: model used for planning actions. Defaults to `gpt-5.2`.
+- `OPENAI_MODEL_FAST`: optional OpenAI model for `fast` profile. Defaults to `OPENAI_MODEL`.
+- `OPENAI_MODEL_CAREFUL`: optional OpenAI model for `careful` profile. Defaults to `OPENAI_MODEL`.
 - `WSA_MAX_STEPS`: maximum actions per run. Defaults to `20`.
 - `WSA_MAX_RUNTIME_SECONDS`: maximum runtime per run. Defaults to `180`.
 - `WSA_RUNTIME_DIR`: runtime data directory. Defaults to `%USERPROFILE%\.windows-screen-agent`.
+
+For long quiz pages, raise the limits and keep the fast profile:
+
+```powershell
+$env:WSA_MODE = "fast"
+$env:WSA_MAX_STEPS = "80"
+$env:WSA_MAX_RUNTIME_SECONDS = "900"
+windows-screen-agent tray
+```
 
 ## Safety Controls
 
