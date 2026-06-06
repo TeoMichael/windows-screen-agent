@@ -45,6 +45,12 @@ def _request_stop(runtime_dir: Path) -> None:
     paths.stop_file.write_text("stop", encoding="utf-8")
 
 
+def _clear_stop(runtime_dir: Path) -> None:
+    paths = runtime_paths(runtime_dir)
+    if paths.stop_file.exists():
+        paths.stop_file.unlink()
+
+
 def _diagnostic_config() -> Config:
     try:
         return load_config()
@@ -76,13 +82,16 @@ def _run_tray(runtime_dir: Path) -> int:
     def run_background():
         thread = active_run.get("thread")
         if thread and thread.is_alive():
-            print("agent already running")
+            print("agent already running", flush=True)
             return
+        _clear_stop(runtime_dir)
+        print("agent start requested", flush=True)
         thread = threading.Thread(target=lambda: main(["run"]), daemon=True)
         active_run["thread"] = thread
         thread.start()
 
     def stop_run():
+        print("agent stop requested", flush=True)
         _request_stop(runtime_dir)
 
     def stop_hotkey_listener():
