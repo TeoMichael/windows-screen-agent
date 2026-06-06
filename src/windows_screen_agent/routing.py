@@ -34,7 +34,12 @@ def choose_planning_profile(
 
     if len(history) >= 2:
         last_two = history[-2:]
-        if last_two[0].get("action") == last_two[1].get("action"):
+        repeated_action = last_two[0].get("action")
+        if repeated_action == last_two[1].get("action") and repeated_action in {
+            "scroll",
+            "wait",
+            "fail",
+        }:
             return "careful"
 
     return "fast"

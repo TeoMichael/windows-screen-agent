@@ -35,7 +35,10 @@ def test_codex_planner_invokes_codex_exec_and_parses_action(tmp_path):
 
         class Result:
             returncode = 0
-            stdout = '{"action":"click","x":4,"y":5,"button":"left","reason":"press"}'
+            stdout = (
+                '{"actions":[{"action":"click","x":4,"y":5,"button":"left",'
+                '"text":"","keys":[],"amount":0,"seconds":0,"reason":"press"}]}'
+            )
             stderr = ""
 
         return Result()
@@ -48,9 +51,9 @@ def test_codex_planner_invokes_codex_exec_and_parses_action(tmp_path):
         data_url="data:image/png;base64,abc",
     )
 
-    action = planner.plan(screen=screen, note="fill the form", history=[])
+    actions = planner.plan(screen=screen, note="fill the form", history=[])
 
-    assert action.action == "click"
+    assert [action.action for action in actions] == ["click"]
     assert calls[0][0][0:2] == ["codex", "exec"]
     assert "--image" in calls[0][0]
     assert str(screen.path) in calls[0][0]
@@ -74,7 +77,10 @@ def test_codex_planner_passes_profile_model(tmp_path):
 
         class Result:
             returncode = 0
-            stdout = '{"action":"done","x":0,"y":0,"button":"left","text":"","keys":[],"amount":0,"seconds":0,"reason":"ok"}'
+            stdout = (
+                '{"actions":[{"action":"done","x":0,"y":0,"button":"left",'
+                '"text":"","keys":[],"amount":0,"seconds":0,"reason":"ok"}]}'
+            )
             stderr = ""
 
         return Result()
@@ -101,7 +107,10 @@ def test_codex_planner_hides_codex_console_window(tmp_path):
 
         class Result:
             returncode = 0
-            stdout = '{"action":"done","x":0,"y":0,"button":"left","text":"","keys":[],"amount":0,"seconds":0,"reason":"ok"}'
+            stdout = (
+                '{"actions":[{"action":"done","x":0,"y":0,"button":"left",'
+                '"text":"","keys":[],"amount":0,"seconds":0,"reason":"ok"}]}'
+            )
             stderr = ""
 
         return Result()

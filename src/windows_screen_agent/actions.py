@@ -69,6 +69,17 @@ def parse_action(raw: str | dict[str, Any]) -> Action:
     )
 
 
+def parse_action_plan(raw: str | dict[str, Any] | list[Any]) -> tuple[Action, ...]:
+    payload = json.loads(raw) if isinstance(raw, str) else raw
+    if isinstance(payload, dict) and "actions" not in payload:
+        return (parse_action(payload),)
+    if isinstance(payload, dict):
+        payload = payload.get("actions")
+    if not isinstance(payload, list) or not payload:
+        raise ActionValidationError("Action plan must contain a non-empty actions list")
+    return tuple(parse_action(item) for item in payload)
+
+
 def validate_action(
     action: Action,
     *,

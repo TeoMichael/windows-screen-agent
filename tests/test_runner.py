@@ -86,3 +86,43 @@ def test_runner_executes_action_then_done(tmp_path):
 
     assert result.reason == "done"
     assert executor.actions == ["click"]
+
+
+def test_runner_executes_action_batch_from_one_plan_call(tmp_path):
+    executor = FakeExecutor()
+    planner = FakePlanner(
+        [
+            [
+                Action(action="click", x=1, y=2, button="left", reason="answer"),
+                Action(action="click", x=80, y=70, button="left", reason="next"),
+            ],
+            Action(action="done", reason="finished"),
+        ]
+    )
+    runner = Runner(
+        config=_config(tmp_path),
+        screen=FakeScreen(tmp_path / "screen.png"),
+        planner=planner,
+        executor=executor,
+    )
+
+    result = runner.run(note="")
+
+    assert result.reason == "done"
+    assert executor.actions == ["click", "click"]
+    assert len(planner.profiles) == 2
+
+
+def test_runner_rejects_empty_action_batch(tmp_path):
+    executor = FakeExecutor()
+    runner = Runner(
+        config=_config(tmp_path),
+        screen=FakeScreen(tmp_path / "screen.png"),
+        planner=FakePlanner([[]]),
+        executor=executor,
+    )
+
+    result = runner.run(note="")
+
+    assert result.reason == "validation failed"
+    assert executor.actions == []

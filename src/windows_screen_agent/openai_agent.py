@@ -2,9 +2,9 @@ from typing import Any
 
 from openai import OpenAI
 
-from windows_screen_agent.actions import Action, parse_action
+from windows_screen_agent.actions import Action, parse_action_plan
 from windows_screen_agent.config import Config
-from windows_screen_agent.prompt import ACTION_JSON_SCHEMA, build_developer_prompt, build_user_text
+from windows_screen_agent.prompt import ACTION_PLAN_JSON_SCHEMA, build_developer_prompt, build_user_text
 from windows_screen_agent.routing import openai_model_for_profile
 from windows_screen_agent.screen import ScreenSnapshot
 
@@ -21,7 +21,7 @@ class OpenAIPlanner:
         note: str,
         history: list[dict],
         profile: str = "careful",
-    ) -> Action:
+    ) -> tuple[Action, ...]:
         response = self.client.responses.create(
             model=openai_model_for_profile(self.config, profile),
             input=[
@@ -34,7 +34,13 @@ class OpenAIPlanner:
                     "content": [
                         {
                             "type": "input_text",
-                            "text": build_user_text(note, screen.width, screen.height, history),
+                            "text": build_user_text(
+                                note,
+                                screen.width,
+                                screen.height,
+                                history,
+                                profile=profile,
+                            ),
                         },
                         {"type": "input_image", "image_url": screen.data_url},
                     ],
@@ -43,11 +49,11 @@ class OpenAIPlanner:
             text={
                 "format": {
                     "type": "json_schema",
-                    "name": "screen_action",
-                    "schema": ACTION_JSON_SCHEMA,
+                    "name": "screen_action_plan",
+                    "schema": ACTION_PLAN_JSON_SCHEMA,
                     "strict": True,
                 }
             },
             reasoning={"effort": "low"},
         )
-        return parse_action(response.output_text)
+        return parse_action_plan(response.output_text)

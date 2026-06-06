@@ -10,6 +10,8 @@ def test_load_config_defaults_to_codex_without_api_key(monkeypatch):
 
     assert cfg.planner_backend == "codex"
     assert cfg.openai_api_key == ""
+    assert cfg.max_runtime_seconds == 900.0
+    assert cfg.action_delay_seconds == 0.2
 
 
 def test_load_config_reads_environment(monkeypatch, tmp_path):

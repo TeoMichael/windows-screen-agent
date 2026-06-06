@@ -17,7 +17,8 @@ class FakeResponses:
     def create(self, **kwargs):
         self.calls.append(kwargs)
         return FakeResponse(
-            '{"action":"click","x":4,"y":5,"button":"left","reason":"press visible button"}'
+            '{"actions":[{"action":"click","x":4,"y":5,"button":"left",'
+            '"text":"","keys":[],"amount":0,"seconds":0,"reason":"press visible button"}]}'
         )
 
 
@@ -46,11 +47,12 @@ def test_planner_calls_responses_api_and_parses_action(tmp_path):
         data_url="data:image/png;base64,abc",
     )
 
-    action = planner.plan(screen=screen, note="fill the form", history=[])
+    actions = planner.plan(screen=screen, note="fill the form", history=[])
 
-    assert action.action == "click"
+    assert [action.action for action in actions] == ["click"]
     assert client.responses.calls[0]["model"] == "gpt-5.2"
     assert client.responses.calls[0]["input"][1]["content"][1]["type"] == "input_image"
+    assert client.responses.calls[0]["text"]["format"]["name"] == "screen_action_plan"
 
 
 def test_openai_planner_uses_profile_model(tmp_path):

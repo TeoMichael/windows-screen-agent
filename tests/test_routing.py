@@ -42,3 +42,12 @@ def test_auto_profile_uses_careful_after_repeated_actions(tmp_path):
     ]
 
     assert choose_planning_profile(_config(tmp_path), note="", history=history) == "careful"
+
+
+def test_auto_profile_stays_fast_after_repeated_clicks(tmp_path):
+    history = [
+        {"action": "click", "x": 10, "y": 20},
+        {"action": "click", "x": 80, "y": 70},
+    ]
+
+    assert choose_planning_profile(_config(tmp_path), note="", history=history) == "fast"

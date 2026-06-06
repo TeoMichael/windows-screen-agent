@@ -2,9 +2,9 @@ import json
 import subprocess
 from typing import Any
 
-from windows_screen_agent.actions import Action, parse_action
+from windows_screen_agent.actions import Action, parse_action_plan
 from windows_screen_agent.config import Config
-from windows_screen_agent.prompt import ACTION_JSON_SCHEMA, build_developer_prompt, build_user_text
+from windows_screen_agent.prompt import ACTION_PLAN_JSON_SCHEMA, build_developer_prompt, build_user_text
 from windows_screen_agent.routing import codex_model_for_profile
 from windows_screen_agent.screen import ScreenSnapshot
 
@@ -49,15 +49,15 @@ def extract_json_object(text: str) -> str:
     raise ValueError("Codex output contained an incomplete JSON object")
 
 
-def _build_codex_prompt(screen: ScreenSnapshot, note: str, history: list[dict]) -> str:
+def _build_codex_prompt(screen: ScreenSnapshot, note: str, history: list[dict], profile: str) -> str:
     return (
         build_developer_prompt()
         + "\n\n"
         + "You are acting as the planner backend for Windows Screen Agent. "
-        + "Return only one JSON object and no prose. The local app will execute the action. "
+        + "Return only one JSON object and no prose. The local app will execute the actions. "
         + f"The current screenshot is saved at: {screen.path}\n"
-        + f"Action schema: {json.dumps(ACTION_JSON_SCHEMA, ensure_ascii=False)}\n"
-        + build_user_text(note, screen.width, screen.height, history)
+        + f"Action plan schema: {json.dumps(ACTION_PLAN_JSON_SCHEMA, ensure_ascii=False)}\n"
+        + build_user_text(note, screen.width, screen.height, history, profile=profile)
     )
 
 
@@ -90,11 +90,11 @@ class CodexPlanner:
         note: str,
         history: list[dict],
         profile: str = "careful",
-    ) -> Action:
-        prompt = _build_codex_prompt(screen, note, history)
+    ) -> tuple[Action, ...]:
+        prompt = _build_codex_prompt(screen, note, history, profile)
         self.config.runtime_dir.mkdir(parents=True, exist_ok=True)
         schema_path = self.config.runtime_dir / "action-schema.json"
-        schema_path.write_text(json.dumps(ACTION_JSON_SCHEMA, ensure_ascii=False), encoding="utf-8")
+        schema_path.write_text(json.dumps(ACTION_PLAN_JSON_SCHEMA, ensure_ascii=False), encoding="utf-8")
         argv = [
             self.config.codex_bin,
             "exec",
@@ -124,4 +124,4 @@ class CodexPlanner:
         )
         if result.returncode != 0:
             raise RuntimeError(f"codex exec failed: {result.stderr.strip()}")
-        return parse_action(extract_json_object(result.stdout))
+        return parse_action_plan(extract_json_object(result.stdout))

@@ -1,6 +1,6 @@
 # Windows Screen Agent
 
-Windows Screen Agent is a Windows-first screen automation assistant. It captures the current screen, asks a planner backend for one structured action, validates that action, executes it locally, and repeats until the task is complete or the user stops it.
+Windows Screen Agent is a Windows-first screen automation assistant. It captures the current screen, asks a planner backend for a short structured action plan, validates those actions, executes them locally, and repeats until the task is complete or the user stops it.
 
 This project is for personal practice, sandbox labs, forms, and repetitive local tasks. Do not use it for graded, proctored, honor-code-bound exams, credential harvesting, payment flows, production administration, or automation that violates a site's terms.
 
@@ -123,7 +123,8 @@ Keep the tray process running while using hotkeys. The hotkeys use the selected 
 - `OPENAI_MODEL_FAST`: optional OpenAI model for `fast` profile. Defaults to `OPENAI_MODEL`.
 - `OPENAI_MODEL_CAREFUL`: optional OpenAI model for `careful` profile. Defaults to `OPENAI_MODEL`.
 - `WSA_MAX_STEPS`: maximum actions per run. Defaults to `20`.
-- `WSA_MAX_RUNTIME_SECONDS`: maximum runtime per run. Defaults to `180`.
+- `WSA_MAX_RUNTIME_SECONDS`: maximum runtime per run. Defaults to `900`.
+- `WSA_ACTION_DELAY_SECONDS`: pause between local actions. Defaults to `0.2`.
 - `WSA_RUNTIME_DIR`: runtime data directory. Defaults to `%USERPROFILE%\.windows-screen-agent`.
 
 For long quiz pages, raise the limits and keep the fast profile:
@@ -136,6 +137,8 @@ windows-screen-agent tray
 ```
 
 Scroll actions use full-page `PageDown`/`PageUp` movement instead of tiny mouse-wheel steps. Repeated scroll actions are amplified to move farther before the next screenshot.
+
+Planner backends may return up to 3 safe actions from one screenshot. This speeds up simple multiple-choice practice pages by allowing visible answer clicks, or answer-plus-next clicks, to run without another planner round.
 
 ## Safety Controls
 

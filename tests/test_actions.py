@@ -5,6 +5,7 @@ from windows_screen_agent.actions import (
     ActionExecutor,
     ActionValidationError,
     parse_action,
+    parse_action_plan,
     validate_action,
 )
 
@@ -15,6 +16,36 @@ def test_parse_click_action():
     assert action.action == "click"
     assert action.x == 10
     assert action.y == 20
+
+
+def test_parse_action_plan_accepts_multiple_actions():
+    actions = parse_action_plan(
+        {
+            "actions": [
+                {"action": "click", "x": 10, "y": 20, "button": "left", "reason": "answer"},
+                {
+                    "action": "click",
+                    "x": 80,
+                    "y": 70,
+                    "button": "left",
+                    "reason": "next",
+                },
+            ]
+        }
+    )
+
+    assert [action.action for action in actions] == ["click", "click"]
+    assert actions[0].x == 10
+    assert actions[1].x == 80
+
+
+def test_parse_action_plan_keeps_single_action_compatibility():
+    actions = parse_action_plan(
+        '{"action":"click","x":10,"y":20,"button":"left","reason":"select"}'
+    )
+
+    assert len(actions) == 1
+    assert actions[0].action == "click"
 
 
 def test_parse_rejects_unknown_action():

@@ -19,15 +19,37 @@ ACTION_JSON_SCHEMA = {
 }
 
 
+ACTION_PLAN_JSON_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "actions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": ACTION_JSON_SCHEMA,
+        }
+    },
+    "required": ["actions"],
+}
+
+
 def build_developer_prompt() -> str:
     return (
         "You are Windows Screen Agent, a coordinate-first Windows automation planner. "
-        "Read the screenshot and return exactly one JSON action matching the schema. "
+        "Read the screenshot and return exactly one JSON object with an actions array "
+        "matching the schema. Return up to 3 actions when they are all safe from the "
+        "same screenshot. "
         "Allowed actions are click, type, hotkey, scroll, wait, done, and fail. "
         "Return every schema field for every action; use neutral values like x=0, y=0, "
         "button='left', text='', keys=[], amount=0, and seconds=0 when a field is not "
         "relevant to the chosen action. "
-        "For quiz or form pages, work top-to-bottom. Do not click choices that are "
+        "For simple multiple-choice practice quizzes, work top-to-bottom and prefer the "
+        "fast path: click each visible unanswered answer that you can identify with high "
+        "confidence. If a single-question page has a visible Next or Next Question button, "
+        "you may include the answer click followed by the Next click in the same actions "
+        "array. Do not batch a final submit, finish, purchase, login, or destructive action. "
+        "Do not click choices that are "
         "already answered, marked correct, marked wrong, disabled, or showing result "
         "percentages. If all currently visible questions are already answered or the "
         "next unanswered question is partly below the bottom of the screen, return a "
@@ -44,10 +66,13 @@ def build_developer_prompt() -> str:
     )
 
 
-def build_user_text(note: str, width: int, height: int, history: list[dict]) -> str:
+def build_user_text(note: str, width: int, height: int, history: list[dict], profile: str = "fast") -> str:
     return (
         f"Screen size: {width}x{height}. "
         f"User note: {note.strip() if note.strip() else '(none)'}. "
+        f"Planner profile: {profile}. "
         f"Recent actions: {history[-5:]}. "
-        "Choose the next single action."
+        "Choose the next action plan. In fast profile, keep reasoning short and batch "
+        "obvious quiz answer clicks or answer-plus-next clicks when the coordinates remain stable. "
+        "In careful profile, return fewer actions when the page may change after a click."
     )
