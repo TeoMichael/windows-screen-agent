@@ -65,25 +65,48 @@ def _diagnostic_config() -> Config:
 
 
 def _run_tray(runtime_dir: Path) -> int:
+    from windows_screen_agent import hotkey
     from windows_screen_agent.tray import create_tray_icon
 
     icon_holder = {}
+    listener_holder = {}
+    active_run = {}
+    listener_stopped = False
 
     def run_background():
+        thread = active_run.get("thread")
+        if thread and thread.is_alive():
+            print("agent already running")
+            return
         thread = threading.Thread(target=lambda: main(["run"]), daemon=True)
+        active_run["thread"] = thread
         thread.start()
 
     def stop_run():
         _request_stop(runtime_dir)
 
+    def stop_hotkey_listener():
+        nonlocal listener_stopped
+        if listener_stopped:
+            return
+        listener = listener_holder.get("listener")
+        if listener is not None:
+            listener.stop()
+        listener_stopped = True
+
     def quit_tray():
         stop_run()
+        stop_hotkey_listener()
         icon_holder["icon"].stop()
 
     icon = create_tray_icon(on_run=run_background, on_stop=stop_run, on_quit=quit_tray)
     icon_holder["icon"] = icon
+    listener_holder["listener"] = hotkey.start_hotkey_listener(on_run=run_background, on_stop=stop_run)
     print("tray running")
-    icon.run()
+    try:
+        icon.run()
+    finally:
+        stop_hotkey_listener()
     return 0
 
 

@@ -3,7 +3,7 @@ import sys
 
 import windows_screen_agent
 from windows_screen_agent.app import build_parser
-from windows_screen_agent.hotkey import DEFAULT_HOTKEY
+from windows_screen_agent.hotkey import DEFAULT_RUN_HOTKEY, DEFAULT_STOP_HOTKEY
 from windows_screen_agent.tray import create_tray_icon
 
 
@@ -19,8 +19,9 @@ def test_parser_has_core_commands():
     assert "demo" not in commands
 
 
-def test_default_hotkey_is_conservative():
-    assert DEFAULT_HOTKEY == "<ctrl>+<alt>+<shift>+s"
+def test_default_hotkeys_start_and_stop_exam_mode():
+    assert DEFAULT_RUN_HOTKEY == "<ctrl>+<alt>+<enter>"
+    assert DEFAULT_STOP_HOTKEY == "<ctrl>+<alt>+<backspace>"
 
 
 def test_tray_icon_can_be_created():

@@ -32,3 +32,16 @@ windows-screen-agent run-once --note "This is the local sample form. Fill the na
 ```
 
 Use only local or sandbox pages while testing.
+
+## 4. Try tray hotkeys
+
+Start the tray process:
+
+```powershell
+windows-screen-agent tray
+```
+
+Then focus the sample form window and use:
+
+- `Ctrl+Alt+Enter` to start a background run.
+- `Ctrl+Alt+Backspace` to stop it.

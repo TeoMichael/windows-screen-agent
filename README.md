@@ -12,6 +12,7 @@ This repository is runnable as a developer preview:
 - `WSA_PLANNER=openai` uses the OpenAI Responses API instead.
 - `python -m pytest -q` runs the sample test suite.
 - `windows-screen-agent run` and `run-once` can move/click/type on the active Windows desktop.
+- `windows-screen-agent tray` runs in the background and exposes global start/stop hotkeys.
 
 ## Requirements
 
@@ -71,9 +72,20 @@ For a visible local sample, open `samples/sample_form.html`, select a backend, f
 windows-screen-agent run-once --note "This is the local sample form. Fill the name field with Sample User."
 ```
 
-## Tray And Hotkey
+## Tray And Hotkeys
 
-The planned tray wrapper exposes Run, Stop, and Quit actions. The default global hotkey is `Ctrl+Alt+Shift+S`. Keep this conservative default so it does not collide with common typing or browser shortcuts.
+The tray wrapper exposes Run, Stop, and Quit actions. Start it before using global hotkeys:
+
+```powershell
+windows-screen-agent tray
+```
+
+Default global hotkeys:
+
+- `Ctrl+Alt+Enter`: start a background `run`.
+- `Ctrl+Alt+Backspace`: request an emergency stop.
+
+Keep the tray process open while using hotkeys. The hotkeys use the selected planner backend, so `WSA_PLANNER=codex` uses local Codex and `WSA_PLANNER=openai` uses the OpenAI API.
 
 ## Configuration
 
