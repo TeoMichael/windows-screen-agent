@@ -108,7 +108,7 @@ Default global hotkeys:
 - `Ctrl+Alt+Enter`: start a background `run`.
 - `Ctrl+Alt+Backspace`: request an emergency stop.
 
-Keep the tray process running while using hotkeys. The hotkeys use the selected planner backend, so `WSA_PLANNER=codex` uses local Codex and `WSA_PLANNER=openai` uses the OpenAI API.
+The first tray menu row shows the current status, such as `Status: Idle`, `Status: Working - step 3: plan (fast)`, `Status: Stopped`, or `Status: Timeout`. Keep the tray process running while using hotkeys. The hotkeys use the selected planner backend, so `WSA_PLANNER=codex` uses local Codex and `WSA_PLANNER=openai` uses the OpenAI API.
 
 ## Configuration
 

@@ -28,10 +28,11 @@ def test_tray_registers_global_hotkeys_and_stops_listener_on_quit(monkeypatch, t
     calls = []
     callbacks = {}
 
-    def fake_create_tray_icon(*, on_run, on_stop, on_quit):
+    def fake_create_tray_icon(*, on_run, on_stop, on_quit, get_status_label):
         callbacks["on_run"] = on_run
         callbacks["on_stop"] = on_stop
         callbacks["on_quit"] = on_quit
+        callbacks["get_status_label"] = get_status_label
         return FakeIcon(calls, callbacks)
 
     def fake_start_hotkey_listener(*, on_run, on_stop):
@@ -47,6 +48,7 @@ def test_tray_registers_global_hotkeys_and_stops_listener_on_quit(monkeypatch, t
     assert callbacks["hotkey_on_run"] is callbacks["on_run"]
     assert callbacks["hotkey_on_stop"] is callbacks["on_stop"]
     assert runtime_paths(tmp_path).stop_file.exists()
+    assert runtime_paths(tmp_path).status_file.read_text(encoding="utf-8") == "stopping"
     assert calls == ["icon.run", "listener.stop", "icon.stop"]
 
 
@@ -72,10 +74,11 @@ def test_tray_hotkey_start_clears_stale_stop_and_prints_feedback(
         def is_alive(self):
             return self.alive
 
-    def fake_create_tray_icon(*, on_run, on_stop, on_quit):
+    def fake_create_tray_icon(*, on_run, on_stop, on_quit, get_status_label):
         callbacks["on_run"] = on_run
         callbacks["on_stop"] = on_stop
         callbacks["on_quit"] = on_quit
+        callbacks["get_status_label"] = get_status_label
         return FakeIcon(calls, callbacks)
 
     def fake_start_hotkey_listener(*, on_run, on_stop):
@@ -86,6 +89,7 @@ def test_tray_hotkey_start_clears_stale_stop_and_prints_feedback(
     def fake_main(argv):
         assert argv == ["run"]
         assert not paths.stop_file.exists()
+        assert paths.status_file.read_text(encoding="utf-8") == "starting"
         calls.append("main.run")
         return 0
 
@@ -103,3 +107,28 @@ def test_tray_hotkey_start_clears_stale_stop_and_prints_feedback(
     output = capsys.readouterr().out
     assert "agent start requested" in output
     assert calls == ["main.run", "listener.stop"]
+
+
+def test_tray_status_label_reads_runtime_status(monkeypatch, tmp_path):
+    calls = []
+    callbacks = {}
+    paths = runtime_paths(tmp_path)
+    paths.status_file.write_text("stopped", encoding="utf-8")
+
+    def fake_create_tray_icon(*, on_run, on_stop, on_quit, get_status_label):
+        callbacks["get_status_label"] = get_status_label
+        return FakeIcon(calls, callbacks)
+
+    def fake_start_hotkey_listener(*, on_run, on_stop):
+        return FakeListener(calls)
+
+    def fake_icon_run(self):
+        calls.append(callbacks["get_status_label"]())
+
+    monkeypatch.setattr(FakeIcon, "run", fake_icon_run)
+    monkeypatch.setattr("windows_screen_agent.tray.create_tray_icon", fake_create_tray_icon)
+    monkeypatch.setattr("windows_screen_agent.hotkey.start_hotkey_listener", fake_start_hotkey_listener)
+
+    assert _run_tray(tmp_path) == 0
+
+    assert calls == ["Status: Stopped", "listener.stop"]

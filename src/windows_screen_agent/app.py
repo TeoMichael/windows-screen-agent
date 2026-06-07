@@ -8,7 +8,7 @@ from windows_screen_agent.actions import ActionExecutor
 from windows_screen_agent.autostart import install_autostart, start_tray_background, uninstall_autostart
 from windows_screen_agent.config import Config, load_config
 from windows_screen_agent.doctor import collect_diagnostics, format_diagnostics
-from windows_screen_agent.logs import runtime_paths
+from windows_screen_agent.logs import runtime_paths, write_status
 from windows_screen_agent.planners import build_planner
 from windows_screen_agent.runner import Runner
 from windows_screen_agent.screen import capture_screen
@@ -91,8 +91,9 @@ def _diagnostic_config() -> Config:
 
 def _run_tray(runtime_dir: Path) -> int:
     from windows_screen_agent import hotkey
-    from windows_screen_agent.tray import create_tray_icon
+    from windows_screen_agent.tray import create_tray_icon, read_status_label
 
+    paths = runtime_paths(runtime_dir)
     icon_holder = {}
     listener_holder = {}
     active_run = {}
@@ -104,6 +105,7 @@ def _run_tray(runtime_dir: Path) -> int:
             print("agent already running", flush=True)
             return
         _clear_stop(runtime_dir)
+        write_status(paths, "starting")
         print("agent start requested", flush=True)
         thread = threading.Thread(target=lambda: main(["run"]), daemon=True)
         active_run["thread"] = thread
@@ -111,6 +113,7 @@ def _run_tray(runtime_dir: Path) -> int:
 
     def stop_run():
         print("agent stop requested", flush=True)
+        write_status(paths, "stopping")
         _request_stop(runtime_dir)
 
     def stop_hotkey_listener():
@@ -127,7 +130,12 @@ def _run_tray(runtime_dir: Path) -> int:
         stop_hotkey_listener()
         icon_holder["icon"].stop()
 
-    icon = create_tray_icon(on_run=run_background, on_stop=stop_run, on_quit=quit_tray)
+    icon = create_tray_icon(
+        on_run=run_background,
+        on_stop=stop_run,
+        on_quit=quit_tray,
+        get_status_label=lambda: read_status_label(paths.status_file),
+    )
     icon_holder["icon"] = icon
     listener_holder["listener"] = hotkey.start_hotkey_listener(on_run=run_background, on_stop=stop_run)
     print("tray running")
