@@ -86,6 +86,17 @@ def _diagnostic_config() -> Config:
                 "OPENAI_MODEL_CAREFUL",
                 os.environ.get("OPENAI_MODEL", "gpt-5.2"),
             ),
+            ollama_base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+            .strip()
+            .rstrip("/"),
+            ollama_model_fast=os.environ.get(
+                "OLLAMA_MODEL_FAST",
+                os.environ.get("OLLAMA_MODEL", "qwen2.5vl:7b"),
+            ).strip(),
+            ollama_model_careful=os.environ.get(
+                "OLLAMA_MODEL_CAREFUL",
+                os.environ.get("OLLAMA_MODEL", "qwen2.5vl:7b"),
+            ).strip(),
         )
 
 
@@ -171,6 +182,8 @@ def main(argv: list[str] | None = None) -> int:
                 planner_backend=cfg.planner_backend,
                 codex_bin=cfg.codex_bin,
                 openai_api_key=os.environ.get("OPENAI_API_KEY"),
+                ollama_base_url=cfg.ollama_base_url,
+                ollama_model=cfg.ollama_model_fast,
             )
             print(format_diagnostics(diagnostics))
             return 0

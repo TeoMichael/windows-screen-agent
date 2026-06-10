@@ -10,6 +10,8 @@ This repository is runnable as a developer preview:
 
 - `WSA_PLANNER=codex` is the default and uses your local Codex CLI as the planner backend.
 - `WSA_PLANNER=openai` uses the OpenAI Responses API instead.
+- `WSA_PLANNER=ollama` uses a local Ollama vision model for offline runs.
+- `WSA_PLANNER=auto` tries local Ollama first, then Codex, then OpenAI when an API key is configured.
 - `python -m pytest -q` runs the sample test suite.
 - `windows-screen-agent run` and `run-once` can move/click/type on the active Windows desktop.
 - `windows-screen-agent tray` runs in the background and exposes global start/stop hotkeys.
@@ -19,7 +21,7 @@ This repository is runnable as a developer preview:
 
 - Windows 10 or 11
 - Python 3.11+
-- Codex CLI installed and logged in for the default `codex` backend, or an OpenAI API key in `OPENAI_API_KEY` for the `openai` backend
+- Codex CLI installed and logged in for the default `codex` backend, an OpenAI API key in `OPENAI_API_KEY` for the `openai` backend, or Ollama with a local vision model for the `ollama` backend
 
 Use a normal Windows Python installation from python.org or the Microsoft Store. Avoid MSYS/Cygwin Python for this project because some Windows wheels may not install cleanly there.
 
@@ -44,6 +46,17 @@ Use OpenAI API instead:
 $env:WSA_PLANNER = "openai"
 $env:OPENAI_API_KEY = "your-api-key"
 ```
+
+Use Ollama offline instead:
+
+```powershell
+ollama pull qwen2.5vl:7b
+$env:WSA_PLANNER = "ollama"
+$env:OLLAMA_MODEL = "qwen2.5vl:7b"
+windows-screen-agent doctor
+```
+
+The model must be downloaded while you still have internet access. After that, Ollama serves it locally through `http://localhost:11434`, so the planner can keep working without OpenAI or Codex network access.
 
 ## Commands
 
@@ -108,11 +121,11 @@ Default global hotkeys:
 - `Ctrl+Alt+Enter`: start a background `run`.
 - `Ctrl+Alt+Backspace`: request an emergency stop.
 
-The first tray menu row shows the current status, such as `Status: Idle`, `Status: Working - step 3: plan (fast)`, `Status: Stopped`, or `Status: Timeout`. Keep the tray process running while using hotkeys. The hotkeys use the selected planner backend, so `WSA_PLANNER=codex` uses local Codex and `WSA_PLANNER=openai` uses the OpenAI API.
+The first tray menu row shows the current status, such as `Status: Idle`, `Status: Working - step 3: plan (fast)`, `Status: Stopped`, or `Status: Timeout`. Keep the tray process running while using hotkeys. The hotkeys use the selected planner backend, so `WSA_PLANNER=codex` uses local Codex, `WSA_PLANNER=openai` uses the OpenAI API, and `WSA_PLANNER=ollama` uses a local Ollama model.
 
 ## Configuration
 
-- `WSA_PLANNER`: `codex` or `openai`. Defaults to `codex`.
+- `WSA_PLANNER`: `codex`, `openai`, `ollama`, or `auto`. Defaults to `codex`.
 - `WSA_MODE`: `auto`, `fast`, or `careful`. Defaults to `auto`; simple quiz/form runs use `fast`, complex/security/lab notes use `careful`.
 - `CODEX_BIN`: Codex executable used when `WSA_PLANNER=codex`. Defaults to `codex`.
 - `CODEX_MODEL`: optional default Codex model passed to `codex exec --model`.
@@ -122,6 +135,10 @@ The first tray menu row shows the current status, such as `Status: Idle`, `Statu
 - `OPENAI_MODEL`: model used for planning actions. Defaults to `gpt-5.2`.
 - `OPENAI_MODEL_FAST`: optional OpenAI model for `fast` profile. Defaults to `OPENAI_MODEL`.
 - `OPENAI_MODEL_CAREFUL`: optional OpenAI model for `careful` profile. Defaults to `OPENAI_MODEL`.
+- `OLLAMA_BASE_URL`: local Ollama API URL. Defaults to `http://localhost:11434`.
+- `OLLAMA_MODEL`: optional default Ollama vision model. Defaults to `qwen2.5vl:7b`.
+- `OLLAMA_MODEL_FAST`: optional Ollama model for `fast` profile. Defaults to `OLLAMA_MODEL`.
+- `OLLAMA_MODEL_CAREFUL`: optional Ollama model for `careful` profile. Defaults to `OLLAMA_MODEL`.
 - `WSA_MAX_STEPS`: maximum actions per run. Defaults to `20`.
 - `WSA_MAX_RUNTIME_SECONDS`: maximum runtime per run. Defaults to `900`.
 - `WSA_ACTION_DELAY_SECONDS`: pause between local actions. Defaults to `0.2`.

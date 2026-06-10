@@ -48,6 +48,30 @@ def test_load_config_reads_mode_and_model_profiles(monkeypatch, tmp_path):
     assert cfg.openai_model_careful == "openai-careful"
 
 
+def test_load_config_reads_ollama_backend(monkeypatch, tmp_path):
+    monkeypatch.setenv("WSA_PLANNER", "ollama")
+    monkeypatch.setenv("OLLAMA_BASE_URL", "http://localhost:11434/")
+    monkeypatch.setenv("OLLAMA_MODEL_FAST", "qwen2.5vl:3b")
+    monkeypatch.setenv("OLLAMA_MODEL_CAREFUL", "qwen2.5vl:7b")
+    monkeypatch.setenv("WSA_RUNTIME_DIR", str(tmp_path))
+
+    cfg = load_config()
+
+    assert cfg.planner_backend == "ollama"
+    assert cfg.ollama_base_url == "http://localhost:11434"
+    assert cfg.ollama_model_fast == "qwen2.5vl:3b"
+    assert cfg.ollama_model_careful == "qwen2.5vl:7b"
+
+
+def test_load_config_accepts_auto_backend(monkeypatch):
+    monkeypatch.setenv("WSA_PLANNER", "auto")
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    cfg = load_config()
+
+    assert cfg.planner_backend == "auto"
+
+
 def test_load_config_rejects_unknown_mode(monkeypatch):
     monkeypatch.setenv("WSA_PLANNER", "codex")
     monkeypatch.setenv("WSA_MODE", "slowish")

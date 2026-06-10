@@ -20,6 +20,9 @@ class Config:
     codex_model_careful: str = ""
     openai_model_fast: str = "gpt-5.2"
     openai_model_careful: str = "gpt-5.2"
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model_fast: str = "qwen2.5vl:7b"
+    ollama_model_careful: str = "qwen2.5vl:7b"
 
 
 def _int_env(name: str, default: int) -> int:
@@ -54,8 +57,8 @@ def _default_codex_bin() -> str:
 
 def load_config() -> Config:
     planner_backend = os.environ.get("WSA_PLANNER", "codex").strip().lower()
-    if planner_backend not in {"codex", "openai"}:
-        raise ValueError("WSA_PLANNER must be either 'codex' or 'openai'")
+    if planner_backend not in {"codex", "openai", "ollama", "auto"}:
+        raise ValueError("WSA_PLANNER must be one of 'codex', 'openai', 'ollama', or 'auto'")
 
     planner_mode = os.environ.get("WSA_MODE", "auto").strip().lower()
     if planner_mode not in {"auto", "fast", "careful"}:
@@ -70,6 +73,7 @@ def load_config() -> Config:
     ).expanduser()
     openai_model = os.environ.get("OPENAI_MODEL", "gpt-5.2")
     codex_model = os.environ.get("CODEX_MODEL", "").strip()
+    ollama_model = os.environ.get("OLLAMA_MODEL", "qwen2.5vl:7b").strip()
 
     return Config(
         openai_api_key=api_key,
@@ -87,4 +91,9 @@ def load_config() -> Config:
         codex_model_careful=os.environ.get("CODEX_MODEL_CAREFUL", codex_model).strip(),
         openai_model_fast=os.environ.get("OPENAI_MODEL_FAST", openai_model),
         openai_model_careful=os.environ.get("OPENAI_MODEL_CAREFUL", openai_model),
+        ollama_base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434").strip().rstrip(
+            "/"
+        ),
+        ollama_model_fast=os.environ.get("OLLAMA_MODEL_FAST", ollama_model).strip(),
+        ollama_model_careful=os.environ.get("OLLAMA_MODEL_CAREFUL", ollama_model).strip(),
     )

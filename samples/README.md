@@ -23,6 +23,15 @@ $env:OPENAI_API_KEY = "your-api-key"
 windows-screen-agent doctor
 ```
 
+To use a local offline Ollama model instead:
+
+```powershell
+ollama pull qwen2.5vl:7b
+$env:WSA_PLANNER = "ollama"
+$env:OLLAMA_MODEL = "qwen2.5vl:7b"
+windows-screen-agent doctor
+```
+
 For quiz pages, start with fast mode and a larger step budget:
 
 ```powershell

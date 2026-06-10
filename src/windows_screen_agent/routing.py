@@ -55,3 +55,9 @@ def openai_model_for_profile(config: Config, profile: str) -> str:
     if profile == "fast":
         return config.openai_model_fast
     return config.openai_model_careful
+
+
+def ollama_model_for_profile(config: Config, profile: str) -> str:
+    if profile == "fast":
+        return config.ollama_model_fast
+    return config.ollama_model_careful
