@@ -77,10 +77,10 @@ def _clear_stop(runtime_dir: Path) -> None:
 
 def _diagnostic_config() -> Config:
     try:
-        return load_config()
+        cfg = load_config()
     except ValueError:
         runtime_dir = _runtime_dir_without_api_key()
-        return Config(
+        cfg = Config(
             openai_api_key=os.environ.get("OPENAI_API_KEY", ""),
             model=os.environ.get("OPENAI_MODEL", "gpt-5.2"),
             runtime_dir=runtime_dir,
@@ -117,6 +117,10 @@ def _diagnostic_config() -> Config:
                 os.environ.get("OLLAMA_MODEL", "qwen2.5vl:7b"),
             ).strip(),
         )
+    settings = load_settings(_settings_file(cfg.runtime_dir))
+    if settings.planner_backend:
+        cfg = replace(cfg, planner_backend=settings.planner_backend)
+    return cfg
 
 
 def _run_tray(runtime_dir: Path) -> int:

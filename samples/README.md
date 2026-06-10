@@ -27,6 +27,7 @@ To use a local offline Ollama model instead:
 
 ```powershell
 ollama pull qwen2.5vl:7b
+ollama serve
 $env:WSA_PLANNER = "ollama"
 $env:OLLAMA_MODEL = "qwen2.5vl:7b"
 windows-screen-agent doctor

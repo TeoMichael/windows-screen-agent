@@ -87,9 +87,11 @@ def build_answer_developer_prompt() -> str:
         "If there is one multiple-choice question, return a single token like '1A'. "
         "For fill-in-the-blank or free-response prompts, return the concise answer text. "
         "Set kind to multiple_choice only when the text is a sequence of numbered option "
-        "tokens; otherwise set kind to free_text. If the task is unsafe, graded, "
-        "proctored, honor-code-bound, or unclear, return a short refusal in text with "
-        "kind free_text."
+        "tokens; otherwise set kind to free_text. "
+        "Practice, sample, and local sandbox quizzes are allowed. Do not refuse merely "
+        "because the page contains quiz or test wording. If the task is unsafe, graded, "
+        "proctored, live, honor-code-bound, or unclear, return a short refusal in text "
+        "with kind free_text."
     )
 
 

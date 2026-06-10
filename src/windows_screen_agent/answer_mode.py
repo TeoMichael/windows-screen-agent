@@ -4,6 +4,8 @@ import re
 import tkinter as tk
 from typing import Any
 
+import pyperclip
+
 from windows_screen_agent.config import Config
 from windows_screen_agent.logs import runtime_paths, write_status
 from windows_screen_agent.routing import choose_planning_profile
@@ -15,7 +17,16 @@ class AnswerResult:
     kind: str = "free_text"
 
 
+def normalize_multiple_choice_text(text: str) -> str:
+    tokens = re.findall(r"\b(\d{1,2})\s*[\.\)\-:]?\s*([A-Za-z])\b", text)
+    if not tokens:
+        return text.strip()
+    return " ".join(f"{number}{letter.upper()}" for number, letter in tokens)
+
+
 def format_answer_text(result: AnswerResult) -> str:
+    if result.kind == "multiple_choice":
+        return normalize_multiple_choice_text(result.text)
     return result.text.strip()
 
 
@@ -39,7 +50,7 @@ def answer_icon_tokens(result: AnswerResult) -> list[str]:
     return ["TXT"]
 
 
-def copy_to_clipboard(text: str) -> None:
+def _copy_to_clipboard_with_tk(text: str) -> None:
     root = tk.Tk()
     root.withdraw()
     try:
@@ -48,6 +59,13 @@ def copy_to_clipboard(text: str) -> None:
         root.update()
     finally:
         root.destroy()
+
+
+def copy_to_clipboard(text: str, fallback_writer=_copy_to_clipboard_with_tk) -> None:
+    try:
+        pyperclip.copy(text)
+    except pyperclip.PyperclipException:
+        fallback_writer(text)
 
 
 def run_answer_once(

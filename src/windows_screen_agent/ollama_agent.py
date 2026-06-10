@@ -25,6 +25,15 @@ def _screen_image_base64(screen: ScreenSnapshot) -> str:
     return screen.data_url
 
 
+def _ollama_request_error(config: Config, exc: BaseException) -> RuntimeError:
+    return RuntimeError(
+        "Ollama is not running at "
+        f"{config.ollama_base_url}. Start Ollama with `ollama serve`, pull model "
+        f"`{config.ollama_model_fast}`, or choose Model > Auto/Codex/OpenAI. "
+        f"Original error: {exc}"
+    )
+
+
 class OllamaPlanner:
     def __init__(self, config: Config, opener: Any = urlopen):
         self.config = config
@@ -68,7 +77,7 @@ class OllamaPlanner:
             with self.opener(request, timeout=_request_timeout(self.config)) as response:
                 response_payload = json.loads(response.read().decode("utf-8"))
         except (HTTPError, URLError, OSError, TimeoutError) as exc:
-            raise RuntimeError(f"ollama request failed: {exc}") from exc
+            raise _ollama_request_error(self.config, exc) from exc
         except json.JSONDecodeError as exc:
             raise RuntimeError("ollama returned invalid JSON") from exc
 
@@ -114,7 +123,7 @@ class OllamaPlanner:
             with self.opener(request, timeout=_request_timeout(self.config)) as response:
                 response_payload = json.loads(response.read().decode("utf-8"))
         except (HTTPError, URLError, OSError, TimeoutError) as exc:
-            raise RuntimeError(f"ollama request failed: {exc}") from exc
+            raise _ollama_request_error(self.config, exc) from exc
         except json.JSONDecodeError as exc:
             raise RuntimeError("ollama returned invalid JSON") from exc
 

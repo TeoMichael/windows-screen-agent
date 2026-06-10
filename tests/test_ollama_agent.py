@@ -1,5 +1,6 @@
 import json
 from dataclasses import dataclass
+from urllib.error import URLError
 
 from windows_screen_agent.actions import Action
 from windows_screen_agent.config import Config
@@ -136,6 +137,32 @@ def test_ollama_planner_answer_uses_answer_schema(tmp_path):
     assert answer.text == "1A"
     assert payload["format"] == ANSWER_JSON_SCHEMA
     assert payload["messages"][1]["images"] == ["abc123"]
+
+
+def test_ollama_connection_refused_error_is_actionable(tmp_path):
+    from windows_screen_agent.ollama_agent import OllamaPlanner
+
+    def opener(request, timeout):
+        raise URLError(ConnectionRefusedError(10061, "connection refused"))
+
+    planner = OllamaPlanner(config=_config(tmp_path), opener=opener)
+    screen = ScreenSnapshot(
+        path=tmp_path / "screen.png",
+        width=100,
+        height=80,
+        data_url="data:image/png;base64,abc123",
+    )
+
+    try:
+        planner.answer(screen=screen, note="answer only", history=[], profile="fast")
+    except RuntimeError as exc:
+        message = str(exc)
+    else:
+        raise AssertionError("expected RuntimeError")
+
+    assert "Ollama is not running" in message
+    assert "http://localhost:11434" in message
+    assert "Model > Auto/Codex/OpenAI" in message
 
 
 def test_planner_factory_selects_ollama_backend(tmp_path):

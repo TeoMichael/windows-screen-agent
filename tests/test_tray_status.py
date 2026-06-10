@@ -1,4 +1,5 @@
 from windows_screen_agent.tray import (
+    _icon_image,
     cycle_answer_label,
     create_tray_icon,
     icon_label_for_status,
@@ -92,6 +93,22 @@ def test_icon_label_for_status_maps_runtime_states():
     assert icon_label_for_status("answer: plan (fast)", [], 0) == "THK"
     assert icon_label_for_status("step 1: click", [], 0) == "ACT"
     assert icon_label_for_status("failed", [], 0) == "!"
+
+
+def test_answer_icon_label_uses_large_visible_badge():
+    image = _icon_image("1A")
+    background = image.getpixel((0, 0))
+    changed_points = [
+        (x, y)
+        for y in range(image.height)
+        for x in range(image.width)
+        if image.getpixel((x, y)) != background
+    ]
+    xs = [point[0] for point in changed_points]
+    ys = [point[1] for point in changed_points]
+
+    assert max(xs) - min(xs) >= 28
+    assert max(ys) - min(ys) >= 20
 
 
 def test_icon_refresher_updates_menu_for_dynamic_status(tmp_path):

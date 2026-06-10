@@ -32,3 +32,16 @@ def test_runtime_settings_override_loaded_config(monkeypatch, tmp_path):
     cfg = _load_config_with_runtime_settings(tmp_path)
 
     assert cfg.planner_backend == "ollama"
+
+
+def test_diagnostic_config_uses_runtime_settings(monkeypatch, tmp_path):
+    from windows_screen_agent.app import _diagnostic_config
+
+    monkeypatch.setenv("WSA_RUNTIME_DIR", str(tmp_path))
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("WSA_PLANNER", raising=False)
+    save_settings(tmp_path / "settings.json", RuntimeSettings(planner_backend="ollama"))
+
+    cfg = _diagnostic_config()
+
+    assert cfg.planner_backend == "ollama"

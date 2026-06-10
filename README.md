@@ -52,12 +52,13 @@ Use Ollama offline instead:
 
 ```powershell
 ollama pull qwen2.5vl:7b
+ollama serve
 $env:WSA_PLANNER = "ollama"
 $env:OLLAMA_MODEL = "qwen2.5vl:7b"
 windows-screen-agent doctor
 ```
 
-The model must be downloaded while you still have internet access. After that, Ollama serves it locally through `http://localhost:11434`, so the planner can keep working without OpenAI or Codex network access.
+The model must be downloaded while you still have internet access. After that, keep the Ollama app or `ollama serve` running locally through `http://localhost:11434`, so the planner can keep working without OpenAI or Codex network access.
 
 ## Commands
 

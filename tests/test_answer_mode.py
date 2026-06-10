@@ -4,6 +4,7 @@ from pathlib import Path
 from windows_screen_agent.answer_mode import (
     AnswerResult,
     answer_icon_tokens,
+    copy_to_clipboard,
     format_answer_text,
     parse_answer_result,
     run_answer_once,
@@ -19,6 +20,13 @@ def test_format_answer_text_keeps_short_multiple_choice_sequence():
     assert answer_icon_tokens(result) == ["1A", "2B", "3C"]
 
 
+def test_format_answer_text_normalizes_multiple_choice_variants():
+    result = AnswerResult(text="1. A\n2) b\n3: C", kind="multiple_choice")
+
+    assert format_answer_text(result) == "1A 2B 3C"
+    assert answer_icon_tokens(result) == ["1A", "2B", "3C"]
+
+
 def test_answer_icon_tokens_use_txt_for_free_text():
     result = AnswerResult(text="The answer is a longer explanation.", kind="free_text")
 
@@ -29,6 +37,21 @@ def test_parse_answer_result_from_json():
     result = parse_answer_result('{"text":"1A 2B","kind":"multiple_choice","reason":"visible"}')
 
     assert result == AnswerResult(text="1A 2B", kind="multiple_choice")
+
+
+def test_copy_to_clipboard_prefers_text_clipboard_backend(monkeypatch):
+    copied = []
+    fallback_calls = []
+
+    monkeypatch.setattr(
+        "windows_screen_agent.answer_mode.pyperclip.copy",
+        lambda text: copied.append(text),
+    )
+
+    copy_to_clipboard("1A 2B", fallback_writer=lambda text: fallback_calls.append(text))
+
+    assert copied == ["1A 2B"]
+    assert fallback_calls == []
 
 
 @dataclass

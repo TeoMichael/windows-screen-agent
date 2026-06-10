@@ -2,19 +2,37 @@ from collections.abc import Callable
 from pathlib import Path
 from threading import Event, Thread
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import pystray
 
 
+def _load_badge_font(label: str) -> ImageFont.ImageFont:
+    size = 38 if len(label) <= 2 else 30
+    for font_name in ("arialbd.ttf", "segoeuib.ttf", "arial.ttf"):
+        try:
+            return ImageFont.truetype(font_name, size=size)
+        except OSError:
+            continue
+    return ImageFont.load_default()
+
+
 def _icon_image(label: str = "") -> Image.Image:
-    image = Image.new("RGB", (64, 64), color=(35, 35, 35))
+    background = (16, 70, 108) if label else (35, 35, 35)
+    image = Image.new("RGB", (64, 64), color=background)
     draw = ImageDraw.Draw(image)
     if label:
         text = label[:3].upper()
-        bbox = draw.textbbox((0, 0), text)
+        font = _load_badge_font(text)
+        bbox = draw.textbbox((0, 0), text, font=font)
         width = bbox[2] - bbox[0]
         height = bbox[3] - bbox[1]
-        draw.text(((64 - width) / 2, (64 - height) / 2 - 2), text, fill=(245, 245, 245))
+        draw.rounded_rectangle((2, 2, 61, 61), radius=8, outline=(245, 245, 245), width=2)
+        draw.text(
+            ((64 - width) / 2 - bbox[0], (64 - height) / 2 - bbox[1] - 1),
+            text,
+            fill=(255, 255, 255),
+            font=font,
+        )
     else:
         draw.rectangle((14, 18, 50, 44), outline=(230, 230, 230), width=3)
         draw.rectangle((26, 48, 38, 52), fill=(230, 230, 230))
