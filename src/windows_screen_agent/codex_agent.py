@@ -3,8 +3,16 @@ import subprocess
 from typing import Any
 
 from windows_screen_agent.actions import Action, parse_action_plan
+from windows_screen_agent.answer_mode import AnswerResult, parse_answer_result
 from windows_screen_agent.config import Config
-from windows_screen_agent.prompt import ACTION_PLAN_JSON_SCHEMA, build_developer_prompt, build_user_text
+from windows_screen_agent.prompt import (
+    ACTION_PLAN_JSON_SCHEMA,
+    ANSWER_JSON_SCHEMA,
+    build_answer_developer_prompt,
+    build_answer_user_text,
+    build_developer_prompt,
+    build_user_text,
+)
 from windows_screen_agent.routing import codex_model_for_profile
 from windows_screen_agent.screen import ScreenSnapshot
 
@@ -58,6 +66,18 @@ def _build_codex_prompt(screen: ScreenSnapshot, note: str, history: list[dict], 
         + f"The current screenshot is saved at: {screen.path}\n"
         + f"Action plan schema: {json.dumps(ACTION_PLAN_JSON_SCHEMA, ensure_ascii=False)}\n"
         + build_user_text(note, screen.width, screen.height, history, profile=profile)
+    )
+
+
+def _build_codex_answer_prompt(screen: ScreenSnapshot, note: str, profile: str) -> str:
+    return (
+        build_answer_developer_prompt()
+        + "\n\n"
+        + "You are acting as the answer-only backend for Windows Screen Agent. "
+        + "Return only one JSON object and no prose. The local app will copy the answer text. "
+        + f"The current screenshot is saved at: {screen.path}\n"
+        + f"Answer result schema: {json.dumps(ANSWER_JSON_SCHEMA, ensure_ascii=False)}\n"
+        + build_answer_user_text(note, screen.width, screen.height, profile=profile)
     )
 
 
@@ -125,3 +145,46 @@ class CodexPlanner:
         if result.returncode != 0:
             raise RuntimeError(f"codex exec failed: {result.stderr.strip()}")
         return parse_action_plan(extract_json_object(result.stdout))
+
+    def answer(
+        self,
+        *,
+        screen: ScreenSnapshot,
+        note: str,
+        history: list[dict],
+        profile: str = "careful",
+    ) -> AnswerResult:
+        prompt = _build_codex_answer_prompt(screen, note, profile)
+        self.config.runtime_dir.mkdir(parents=True, exist_ok=True)
+        schema_path = self.config.runtime_dir / "answer-schema.json"
+        schema_path.write_text(json.dumps(ANSWER_JSON_SCHEMA, ensure_ascii=False), encoding="utf-8")
+        argv = [
+            self.config.codex_bin,
+            "exec",
+            "--skip-git-repo-check",
+            "--sandbox",
+            "read-only",
+        ]
+        model = codex_model_for_profile(self.config, profile)
+        if model:
+            argv.extend(["--model", model])
+        argv.extend(
+            [
+                "--image",
+                str(screen.path),
+                "--output-schema",
+                str(schema_path),
+                prompt,
+            ]
+        )
+        result = self.command_runner(
+            argv,
+            capture_output=True,
+            text=True,
+            timeout=max(30, int(self.config.max_runtime_seconds)),
+            check=False,
+            **_hidden_subprocess_kwargs(),
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"codex exec failed: {result.stderr.strip()}")
+        return parse_answer_result(extract_json_object(result.stdout))

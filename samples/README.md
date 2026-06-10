@@ -50,7 +50,17 @@ windows-screen-agent run-once --note "This is the local sample form. Fill the na
 
 Use only local or sandbox pages while testing.
 
-## 4. Try tray hotkeys
+## 4. Try answer-only mode
+
+Focus a local sample, quiz, or sandbox page, then run:
+
+```powershell
+windows-screen-agent answer-once --note "Return only the visible answer."
+```
+
+The result is copied to the clipboard and stored in `%USERPROFILE%\.windows-screen-agent\answer.txt`.
+
+## 5. Try tray hotkeys
 
 Start the tray process in the background:
 
@@ -62,6 +72,7 @@ Then focus the sample form window and use:
 
 - `Ctrl+Alt+Enter` to start a background run.
 - `Ctrl+Alt+Backspace` to stop it.
+- `Ctrl+Shift+\` to capture one answer-only result and copy it to the clipboard.
 
 Install auto-start after login:
 

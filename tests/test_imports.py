@@ -18,6 +18,7 @@ def test_parser_has_core_commands():
     assert {
         "run",
         "run-once",
+        "answer-once",
         "status",
         "stop",
         "doctor",

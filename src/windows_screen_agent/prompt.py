@@ -34,6 +34,18 @@ ACTION_PLAN_JSON_SCHEMA = {
 }
 
 
+ANSWER_JSON_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        "text": {"type": "string"},
+        "kind": {"type": "string", "enum": ["multiple_choice", "free_text"]},
+        "reason": {"type": "string"},
+    },
+    "required": ["text", "kind", "reason"],
+}
+
+
 def build_developer_prompt() -> str:
     return (
         "You are Windows Screen Agent, a coordinate-first Windows automation planner. "
@@ -66,6 +78,21 @@ def build_developer_prompt() -> str:
     )
 
 
+def build_answer_developer_prompt() -> str:
+    return (
+        "You are Windows Screen Agent answer-only mode. Read the screenshot and return "
+        "only the answer text in JSON. Do not choose coordinates and do not request any "
+        "local action. For visible multiple-choice questions, return compact tokens like "
+        "'1A 2B 3C' when question numbers and option letters are visible or inferable. "
+        "If there is one multiple-choice question, return a single token like '1A'. "
+        "For fill-in-the-blank or free-response prompts, return the concise answer text. "
+        "Set kind to multiple_choice only when the text is a sequence of numbered option "
+        "tokens; otherwise set kind to free_text. If the task is unsafe, graded, "
+        "proctored, honor-code-bound, or unclear, return a short refusal in text with "
+        "kind free_text."
+    )
+
+
 def build_user_text(note: str, width: int, height: int, history: list[dict], profile: str = "fast") -> str:
     return (
         f"Screen size: {width}x{height}. "
@@ -75,4 +102,13 @@ def build_user_text(note: str, width: int, height: int, history: list[dict], pro
         "Choose the next action plan. In fast profile, keep reasoning short and batch "
         "obvious quiz answer clicks or answer-plus-next clicks when the coordinates remain stable. "
         "In careful profile, return fewer actions when the page may change after a click."
+    )
+
+
+def build_answer_user_text(note: str, width: int, height: int, profile: str = "fast") -> str:
+    return (
+        f"Screen size: {width}x{height}. "
+        f"User note: {note.strip() if note.strip() else '(none)'}. "
+        f"Planner profile: {profile}. "
+        "Return one answer JSON object for the current screenshot."
     )

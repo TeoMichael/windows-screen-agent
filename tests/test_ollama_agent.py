@@ -111,6 +111,33 @@ def test_ollama_planner_uses_careful_model(tmp_path):
     assert payload["model"] == "qwen2.5vl:7b"
 
 
+def test_ollama_planner_answer_uses_answer_schema(tmp_path):
+    from windows_screen_agent.ollama_agent import OllamaPlanner
+    from windows_screen_agent.prompt import ANSWER_JSON_SCHEMA
+
+    opener = FakeOpener(
+        {
+            "message": {
+                "content": '{"text":"1A","kind":"multiple_choice","reason":"visible"}'
+            }
+        }
+    )
+    planner = OllamaPlanner(config=_config(tmp_path), opener=opener)
+    screen = ScreenSnapshot(
+        path=tmp_path / "screen.png",
+        width=100,
+        height=80,
+        data_url="data:image/png;base64,abc123",
+    )
+
+    answer = planner.answer(screen=screen, note="answer only", history=[], profile="fast")
+
+    payload = json.loads(opener.calls[0][0].data.decode("utf-8"))
+    assert answer.text == "1A"
+    assert payload["format"] == ANSWER_JSON_SCHEMA
+    assert payload["messages"][1]["images"] == ["abc123"]
+
+
 def test_planner_factory_selects_ollama_backend(tmp_path):
     from windows_screen_agent.ollama_agent import OllamaPlanner
 

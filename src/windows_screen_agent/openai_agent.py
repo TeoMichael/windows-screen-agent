@@ -3,8 +3,16 @@ from typing import Any
 from openai import OpenAI
 
 from windows_screen_agent.actions import Action, parse_action_plan
+from windows_screen_agent.answer_mode import AnswerResult, parse_answer_result
 from windows_screen_agent.config import Config
-from windows_screen_agent.prompt import ACTION_PLAN_JSON_SCHEMA, build_developer_prompt, build_user_text
+from windows_screen_agent.prompt import (
+    ACTION_PLAN_JSON_SCHEMA,
+    ANSWER_JSON_SCHEMA,
+    build_answer_developer_prompt,
+    build_answer_user_text,
+    build_developer_prompt,
+    build_user_text,
+)
 from windows_screen_agent.routing import openai_model_for_profile
 from windows_screen_agent.screen import ScreenSnapshot
 
@@ -57,3 +65,46 @@ class OpenAIPlanner:
             reasoning={"effort": "low"},
         )
         return parse_action_plan(response.output_text)
+
+    def answer(
+        self,
+        *,
+        screen: ScreenSnapshot,
+        note: str,
+        history: list[dict],
+        profile: str = "careful",
+    ) -> AnswerResult:
+        response = self.client.responses.create(
+            model=openai_model_for_profile(self.config, profile),
+            input=[
+                {
+                    "role": "developer",
+                    "content": [{"type": "input_text", "text": build_answer_developer_prompt()}],
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": build_answer_user_text(
+                                note,
+                                screen.width,
+                                screen.height,
+                                profile=profile,
+                            ),
+                        },
+                        {"type": "input_image", "image_url": screen.data_url},
+                    ],
+                },
+            ],
+            text={
+                "format": {
+                    "type": "json_schema",
+                    "name": "screen_answer",
+                    "schema": ANSWER_JSON_SCHEMA,
+                    "strict": True,
+                }
+            },
+            reasoning={"effort": "low"},
+        )
+        return parse_answer_result(response.output_text)

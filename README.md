@@ -14,6 +14,7 @@ This repository is runnable as a developer preview:
 - `WSA_PLANNER=auto` tries local Ollama first, then Codex, then OpenAI when an API key is configured.
 - `python -m pytest -q` runs the sample test suite.
 - `windows-screen-agent run` and `run-once` can move/click/type on the active Windows desktop.
+- `windows-screen-agent answer-once` captures one screenshot, copies an answer-only result to the clipboard, and does not move the mouse.
 - `windows-screen-agent tray` runs in the background and exposes global start/stop hotkeys.
 - `windows-screen-agent install-autostart` installs a per-user Windows Startup shortcut so the tray listener starts after login.
 
@@ -62,6 +63,7 @@ The model must be downloaded while you still have internet access. After that, O
 
 ```powershell
 windows-screen-agent run-once
+windows-screen-agent answer-once
 windows-screen-agent run
 windows-screen-agent status
 windows-screen-agent stop
@@ -120,8 +122,11 @@ Default global hotkeys:
 
 - `Ctrl+Alt+Enter`: start a background `run`.
 - `Ctrl+Alt+Backspace`: request an emergency stop.
+- `Ctrl+Shift+\`: capture one screenshot, produce an answer-only result, copy it to the clipboard, and return to idle.
 
-The first tray menu row shows the current status, such as `Status: Idle`, `Status: Working - step 3: plan (fast)`, `Status: Stopped`, or `Status: Timeout`. Keep the tray process running while using hotkeys. The hotkeys use the selected planner backend, so `WSA_PLANNER=codex` uses local Codex, `WSA_PLANNER=openai` uses the OpenAI API, and `WSA_PLANNER=ollama` uses a local Ollama model.
+The first tray menu row shows the current status, such as `Status: Idle`, `Status: Working - step 3: plan (fast)`, `Status: Stopped`, or `Status: Timeout`. The second row shows the last answer text. Keep the tray process running while using hotkeys. The tray `Model` submenu can switch between Auto, Codex, OpenAI, and Ollama for later hotkey runs.
+
+Answer-only mode never clicks or types. It writes the full answer to the Windows clipboard and stores it in `%USERPROFILE%\.windows-screen-agent\answer.txt`. For short multiple-choice results, the tray icon cycles tokens such as `1A`, `2B`, and `3C` until the next `Ctrl+Shift+\` capture. For longer free-text answers, the icon shows `TXT` while the clipboard keeps the full response.
 
 ## Configuration
 

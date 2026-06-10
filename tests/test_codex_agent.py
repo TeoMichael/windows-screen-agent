@@ -128,6 +128,35 @@ def test_codex_planner_hides_codex_console_window(tmp_path):
     assert calls[0][1]["creationflags"] & subprocess.CREATE_NO_WINDOW
 
 
+def test_codex_planner_answer_invokes_codex_with_answer_schema(tmp_path):
+    calls = []
+
+    def fake_runner(argv, **kwargs):
+        calls.append((argv, kwargs))
+
+        class Result:
+            returncode = 0
+            stdout = '{"text":"1A 2B","kind":"multiple_choice","reason":"visible"}'
+            stderr = ""
+
+        return Result()
+
+    planner = CodexPlanner(config=_config(tmp_path), command_runner=fake_runner)
+    screen = ScreenSnapshot(
+        path=tmp_path / "screen.png",
+        width=100,
+        height=80,
+        data_url="data:image/png;base64,abc",
+    )
+
+    answer = planner.answer(screen=screen, note="answer only", history=[], profile="fast")
+
+    assert answer.text == "1A 2B"
+    assert answer.kind == "multiple_choice"
+    assert "--output-schema" in calls[0][0]
+    assert "Answer result schema" in calls[0][0][-1]
+
+
 def test_planner_factory_selects_codex_by_default(tmp_path):
     planner = build_planner(_config(tmp_path, backend="codex"))
 

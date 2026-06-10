@@ -34,6 +34,27 @@ class AutoPlanner:
                 errors.append(f"{name}: {exc}")
         raise RuntimeError("all planner backends failed: " + "; ".join(errors))
 
+    def answer(
+        self,
+        *,
+        screen: Any,
+        note: str,
+        history: list[dict],
+        profile: str = "careful",
+    ):
+        errors = []
+        for name, planner in self.planners:
+            try:
+                return planner.answer(
+                    screen=screen,
+                    note=note,
+                    history=history,
+                    profile=profile,
+                )
+            except Exception as exc:
+                errors.append(f"{name}: {exc}")
+        raise RuntimeError("all planner backends failed: " + "; ".join(errors))
+
 
 def build_planner(config: Config):
     if config.planner_backend == "codex":

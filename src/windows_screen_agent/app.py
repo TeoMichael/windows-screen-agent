@@ -5,6 +5,7 @@ from pathlib import Path
 import threading
 
 from windows_screen_agent.actions import ActionExecutor
+from windows_screen_agent.answer_mode import run_answer_once
 from windows_screen_agent.autostart import install_autostart, start_tray_background, uninstall_autostart
 from windows_screen_agent.config import Config, load_config
 from windows_screen_agent.doctor import collect_diagnostics, format_diagnostics
@@ -12,6 +13,7 @@ from windows_screen_agent.logs import runtime_paths, write_status
 from windows_screen_agent.planners import build_planner
 from windows_screen_agent.runner import Runner
 from windows_screen_agent.screen import capture_screen
+from windows_screen_agent.settings import RuntimeSettings, load_settings, save_settings
 
 
 class PyAutoGuiScreen:
@@ -30,6 +32,8 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--note", default="")
     run_once = sub.add_parser("run-once")
     run_once.add_argument("--note", default="")
+    answer_once = sub.add_parser("answer-once")
+    answer_once.add_argument("--note", default="")
     sub.add_parser("status")
     sub.add_parser("stop")
     sub.add_parser("doctor")
@@ -43,6 +47,20 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _runtime_dir_without_api_key() -> Path:
     return Path(os.environ.get("WSA_RUNTIME_DIR", str(Path.home() / ".windows-screen-agent")))
+
+
+def _settings_file(runtime_dir: Path) -> Path:
+    return runtime_dir / "settings.json"
+
+
+def _load_config_with_runtime_settings(runtime_dir: Path) -> Config:
+    cfg = load_config()
+    settings = load_settings(_settings_file(runtime_dir))
+    if settings.planner_backend:
+        cfg = replace(cfg, planner_backend=settings.planner_backend)
+        if cfg.planner_backend == "openai" and not cfg.openai_api_key:
+            raise ValueError("OPENAI_API_KEY is required when selected planner is openai")
+    return cfg
 
 
 def _request_stop(runtime_dir: Path) -> None:
@@ -102,12 +120,19 @@ def _diagnostic_config() -> Config:
 
 def _run_tray(runtime_dir: Path) -> int:
     from windows_screen_agent import hotkey
-    from windows_screen_agent.tray import create_tray_icon, read_status_label
+    from windows_screen_agent.tray import (
+        create_tray_icon,
+        read_answer_label,
+        read_status_label,
+        start_icon_refresher,
+    )
 
     paths = runtime_paths(runtime_dir)
     icon_holder = {}
     listener_holder = {}
+    icon_refresh_stop = {}
     active_run = {}
+    active_answer = {}
     listener_stopped = False
 
     def run_background():
@@ -120,6 +145,17 @@ def _run_tray(runtime_dir: Path) -> int:
         print("agent start requested", flush=True)
         thread = threading.Thread(target=lambda: main(["run"]), daemon=True)
         active_run["thread"] = thread
+        thread.start()
+
+    def answer_background():
+        thread = active_answer.get("thread")
+        if thread and thread.is_alive():
+            print("answer already running", flush=True)
+            return
+        write_status(paths, "answer: starting")
+        print("answer start requested", flush=True)
+        thread = threading.Thread(target=lambda: main(["answer-once"]), daemon=True)
+        active_answer["thread"] = thread
         thread.start()
 
     def stop_run():
@@ -141,18 +177,45 @@ def _run_tray(runtime_dir: Path) -> int:
         stop_hotkey_listener()
         icon_holder["icon"].stop()
 
+    def current_planner() -> str:
+        return load_settings(_settings_file(runtime_dir)).planner_backend or os.environ.get(
+            "WSA_PLANNER",
+            "codex",
+        ).strip().lower()
+
+    def select_planner(planner: str) -> None:
+        save_settings(_settings_file(runtime_dir), RuntimeSettings(planner_backend=planner))
+        icon = icon_holder.get("icon")
+        if icon is not None and hasattr(icon, "update_menu"):
+            icon.update_menu()
+
     icon = create_tray_icon(
         on_run=run_background,
         on_stop=stop_run,
         on_quit=quit_tray,
         get_status_label=lambda: read_status_label(paths.status_file),
+        get_answer_label=lambda: read_answer_label(paths.base_dir / "answer.txt"),
+        get_current_planner=current_planner,
+        on_select_planner=select_planner,
     )
     icon_holder["icon"] = icon
-    listener_holder["listener"] = hotkey.start_hotkey_listener(on_run=run_background, on_stop=stop_run)
+    icon_refresh_stop["event"] = start_icon_refresher(
+        icon,
+        paths.status_file,
+        paths.base_dir / "answer_tokens.txt",
+    )
+    listener_holder["listener"] = hotkey.start_hotkey_listener(
+        on_run=run_background,
+        on_stop=stop_run,
+        on_answer=answer_background,
+    )
     print("tray running")
     try:
         icon.run()
     finally:
+        stop_event = icon_refresh_stop.get("event")
+        if stop_event is not None:
+            stop_event.set()
         stop_hotkey_listener()
     return 0
 
@@ -212,7 +275,7 @@ def main(argv: list[str] | None = None) -> int:
 
     import pyautogui
 
-    cfg = load_config()
+    cfg = _load_config_with_runtime_settings(runtime_dir)
     paths = runtime_paths(cfg.runtime_dir)
     if paths.stop_file.exists():
         paths.stop_file.unlink()
@@ -223,6 +286,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "run-once":
         cfg = replace(cfg, max_steps=1)
+    if args.command == "answer-once":
+        result = run_answer_once(
+            config=cfg,
+            screen=screen,
+            planner=planner,
+            note=args.note,
+        )
+        print(f"answer ready: {result.text}")
+        return 0
 
     runner = Runner(config=cfg, screen=screen, planner=planner, executor=executor)
     result = runner.run(note=args.note)
