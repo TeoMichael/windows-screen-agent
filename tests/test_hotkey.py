@@ -37,3 +37,7 @@ def test_start_hotkey_listener_registers_run_and_stop_callbacks():
     listener.bindings[DEFAULT_ANSWER_HOTKEY]()
 
     assert events == ["run", "stop", "answer"]
+
+
+def test_answer_hotkey_defaults_to_ctrl_alt_backslash():
+    assert DEFAULT_ANSWER_HOTKEY == "<ctrl>+<alt>+\\"

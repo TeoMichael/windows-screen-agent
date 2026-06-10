@@ -72,7 +72,7 @@ Then focus the sample form window and use:
 
 - `Ctrl+Alt+Enter` to start a background run.
 - `Ctrl+Alt+Backspace` to stop it.
-- `Ctrl+Shift+\` to capture one answer-only result and copy it to the clipboard.
+- `Ctrl+Alt+\` to capture one answer-only result and copy it to the clipboard.
 
 Install auto-start after login:
 

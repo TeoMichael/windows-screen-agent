@@ -5,7 +5,7 @@ from pynput import keyboard
 
 DEFAULT_RUN_HOTKEY = "<ctrl>+<alt>+<enter>"
 DEFAULT_STOP_HOTKEY = "<ctrl>+<alt>+<backspace>"
-DEFAULT_ANSWER_HOTKEY = "<ctrl>+<shift>+\\"
+DEFAULT_ANSWER_HOTKEY = "<ctrl>+<alt>+\\"
 
 
 def start_hotkey_listener(

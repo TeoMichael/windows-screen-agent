@@ -71,7 +71,9 @@ def icon_label_for_status(status: str, answer_tokens: list[str], tick: int) -> s
         return "THK"
     if any(action in normalized for action in (": click", ": type", ": scroll", ": hotkey")):
         return "ACT"
-    if normalized in {"failed", "validation failed"}:
+    if normalized in {"failed", "validation failed"} or normalized.startswith(
+        ("failed:", "answer failed")
+    ):
         return "!"
     if normalized == "timeout":
         return "TO"
@@ -97,10 +99,16 @@ def start_icon_refresher(icon, status_file: Path, answer_tokens_file: Path, inte
 
     def refresh_loop():
         tick = 0
+        previous_signature = None
         while not stop_event.is_set():
             status = _read_status(status_file)
             tokens = _read_answer_tokens(answer_tokens_file)
-            icon.icon = _icon_image(icon_label_for_status(status, tokens, tick))
+            label = icon_label_for_status(status, tokens, tick)
+            signature = (status, tuple(tokens), label)
+            icon.icon = _icon_image(label)
+            if signature != previous_signature and hasattr(icon, "update_menu"):
+                icon.update_menu()
+                previous_signature = signature
             tick += 1
             stop_event.wait(interval)
 

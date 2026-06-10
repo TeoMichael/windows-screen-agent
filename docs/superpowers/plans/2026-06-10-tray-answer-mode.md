@@ -46,7 +46,7 @@
 - Test: `tests/test_tray_hotkeys.py`
 - Test: `tests/test_tray_status.py`
 
-- [x] Write failing tests for `Ctrl+Shift+\` registration.
+- [x] Write failing tests for answer-only hotkey registration.
 - [x] Write failing tests for icon label cycling: `1A -> 2B -> 3C -> 1A`.
 - [x] Add status-icon rendering helpers for idle, watching, thinking, acting, answer, error.
 - [x] Wire answer hotkey to run one-shot answer mode in a background thread.

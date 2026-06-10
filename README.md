@@ -122,11 +122,11 @@ Default global hotkeys:
 
 - `Ctrl+Alt+Enter`: start a background `run`.
 - `Ctrl+Alt+Backspace`: request an emergency stop.
-- `Ctrl+Shift+\`: capture one screenshot, produce an answer-only result, copy it to the clipboard, and return to idle.
+- `Ctrl+Alt+\`: capture one screenshot, produce an answer-only result, copy it to the clipboard, and return to idle.
 
 The first tray menu row shows the current status, such as `Status: Idle`, `Status: Working - step 3: plan (fast)`, `Status: Stopped`, or `Status: Timeout`. The second row shows the last answer text. Keep the tray process running while using hotkeys. The tray `Model` submenu can switch between Auto, Codex, OpenAI, and Ollama for later hotkey runs.
 
-Answer-only mode never clicks or types. It writes the full answer to the Windows clipboard and stores it in `%USERPROFILE%\.windows-screen-agent\answer.txt`. For short multiple-choice results, the tray icon cycles tokens such as `1A`, `2B`, and `3C` until the next `Ctrl+Shift+\` capture. For longer free-text answers, the icon shows `TXT` while the clipboard keeps the full response.
+Answer-only mode never clicks or types. It writes the full answer to the Windows clipboard and stores it in `%USERPROFILE%\.windows-screen-agent\answer.txt`. For short multiple-choice results, the tray icon cycles tokens such as `1A`, `2B`, and `3C` until the next `Ctrl+Alt+\` capture. For longer free-text answers, the icon shows `TXT` while the clipboard keeps the full response.
 
 ## Configuration
 

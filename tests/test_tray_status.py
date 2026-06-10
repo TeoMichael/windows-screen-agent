@@ -3,6 +3,7 @@ from windows_screen_agent.tray import (
     create_tray_icon,
     icon_label_for_status,
     read_status_label,
+    start_icon_refresher,
 )
 
 
@@ -91,3 +92,37 @@ def test_icon_label_for_status_maps_runtime_states():
     assert icon_label_for_status("answer: plan (fast)", [], 0) == "THK"
     assert icon_label_for_status("step 1: click", [], 0) == "ACT"
     assert icon_label_for_status("failed", [], 0) == "!"
+
+
+def test_icon_refresher_updates_menu_for_dynamic_status(tmp_path):
+    status_file = tmp_path / "status.txt"
+    tokens_file = tmp_path / "answer_tokens.txt"
+    status_file.write_text("answer ready", encoding="utf-8")
+    tokens_file.write_text("1A\n2B", encoding="utf-8")
+
+    class FakeIcon:
+        def __init__(self):
+            self.icons = []
+            self.menu_updates = 0
+
+        @property
+        def icon(self):
+            return self.icons[-1] if self.icons else None
+
+        @icon.setter
+        def icon(self, value):
+            self.icons.append(value)
+
+        def update_menu(self):
+            self.menu_updates += 1
+
+    icon = FakeIcon()
+
+    stop_event = start_icon_refresher(icon, status_file, tokens_file, interval=0.01)
+    try:
+        stop_event.wait(0.05)
+    finally:
+        stop_event.set()
+
+    assert icon.icons
+    assert icon.menu_updates > 0

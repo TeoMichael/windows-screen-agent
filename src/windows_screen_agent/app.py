@@ -3,6 +3,7 @@ from dataclasses import replace
 import os
 from pathlib import Path
 import threading
+import traceback
 
 from windows_screen_agent.actions import ActionExecutor
 from windows_screen_agent.answer_mode import run_answer_once
@@ -135,6 +136,15 @@ def _run_tray(runtime_dir: Path) -> int:
     active_answer = {}
     listener_stopped = False
 
+    def run_worker(argv: list[str], failure_status: str) -> None:
+        try:
+            main(argv)
+        except Exception as exc:
+            message = str(exc).strip() or exc.__class__.__name__
+            write_status(paths, f"{failure_status}: {message}")
+            print(f"{failure_status}: {message}", flush=True)
+            traceback.print_exc()
+
     def run_background():
         thread = active_run.get("thread")
         if thread and thread.is_alive():
@@ -143,7 +153,7 @@ def _run_tray(runtime_dir: Path) -> int:
         _clear_stop(runtime_dir)
         write_status(paths, "starting")
         print("agent start requested", flush=True)
-        thread = threading.Thread(target=lambda: main(["run"]), daemon=True)
+        thread = threading.Thread(target=lambda: run_worker(["run"], "failed"), daemon=True)
         active_run["thread"] = thread
         thread.start()
 
@@ -154,7 +164,10 @@ def _run_tray(runtime_dir: Path) -> int:
             return
         write_status(paths, "answer: starting")
         print("answer start requested", flush=True)
-        thread = threading.Thread(target=lambda: main(["answer-once"]), daemon=True)
+        thread = threading.Thread(
+            target=lambda: run_worker(["answer-once"], "answer failed"),
+            daemon=True,
+        )
         active_answer["thread"] = thread
         thread.start()
 
